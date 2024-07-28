@@ -1,0 +1,10 @@
+spring:
+  profiles:
+    active: local
+
+currency-gateway:
+  fixer:
+    api-access-key: ${FIXER_API_ACCESS_KEY:test}
+    base-url: http://data.fixer.io/api
+    latest-rates-url: /latest
+    currencies-url: /symbols

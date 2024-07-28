@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.currency.gateway.client.FixerClient;
@@ -38,6 +39,7 @@ public class RatesCollector {
     @Autowired
     CurrencyRepository currencyRepository;
 
+    @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
     public void collectRates() {
         //First collect currency symbols to make sure all available currencies are present in the DB.
         CurrenciesResponse currenciesResponse = fixerClient.getCurrencies();

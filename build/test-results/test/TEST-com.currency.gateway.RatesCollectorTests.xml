@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.currency.gateway.RatesCollectorTests" tests="2" skipped="0" failures="0" errors="0" timestamp="2024-07-28T15:18:43" hostname="C02FD74CMD6R" time="0.022">
-  <properties/>
-  <testcase name="testCollectRatesCurrencyNotFound()" classname="com.currency.gateway.RatesCollectorTests" time="0.009"/>
-  <testcase name="testCollectRatesSuccess()" classname="com.currency.gateway.RatesCollectorTests" time="0.008"/>
-  <system-out><![CDATA[2024-07-28T18:18:43.110+03:00  INFO 31553 --- [CurrencyGateway] [    Test worker] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.currency.gateway.RatesCollectorTests]: RatesCollectorTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

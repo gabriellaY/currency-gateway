@@ -1,4 +1,4 @@
-# Currency Gateway 
+# Currency Gateway - WIP
 
 Implementation of gateway application providing currency data to different type of customers.
 

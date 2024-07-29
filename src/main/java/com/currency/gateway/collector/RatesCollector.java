@@ -27,20 +27,24 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RatesCollector {
 
-    @Autowired
-    FixerClient fixerClient;
+    final FixerClient fixerClient;
+    final LatestExchangeRepository latestExchangeRepository;
+    final HistoricalExchangeRepository historicalExchangeRepository;
+    final CurrencyRepository currencyRepository;
 
     @Autowired
-    LatestExchangeRepository latestExchangeRepository;
-
-    @Autowired
-    HistoricalExchangeRepository historicalExchangeRepository;
-
-    @Autowired
-    CurrencyRepository currencyRepository;
+    public RatesCollector(FixerClient fixerClient, LatestExchangeRepository latestExchangeRepository,
+                          HistoricalExchangeRepository historicalExchangeRepository,
+                          CurrencyRepository currencyRepository) {
+        this.fixerClient = fixerClient;
+        this.latestExchangeRepository = latestExchangeRepository;
+        this.historicalExchangeRepository = historicalExchangeRepository;
+        this.currencyRepository = currencyRepository;
+    }
 
     @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
     public void collectRates() {
+        log.info("Collecting currency rates.");
         //First collect currency symbols to make sure all available currencies are present in the DB.
         CurrenciesResponse currenciesResponse = fixerClient.getCurrencies();
 
@@ -60,11 +64,17 @@ public class RatesCollector {
         HashMap<String, String> currencies = currenciesResponse.getSymbols();
 
         for (HashMap.Entry<String, String> c : currencies.entrySet()) {
-            Currency currency = new Currency();
-            currency.setSymbol(c.getKey());
-            currency.setName(c.getValue());
+            Currency currency = new Currency(c.getKey(), c.getValue());
 
-            currencyRepository.save(currency);
+            // Check if the currency is not already present in the DB, if not then add it.
+            Optional<Currency> currencyInDb = currencyRepository.findBySymbol(c.getKey());
+
+            currencyInDb.ifPresentOrElse(curr -> {
+                log.info("Currency {} already present in the DB.", curr.getSymbol());
+            }, () -> {
+                log.info("Saving currency {} to the DB.", currency.getSymbol());
+                currencyRepository.save(currency);
+            });
         }
     }
 
@@ -86,32 +96,25 @@ public class RatesCollector {
                 throw new RuntimeException(String.format("Target currency (%s) not present in the DB.", rate.getKey()));
             }
 
-            HistoricalExchange historicalExchange = new HistoricalExchange();
-            historicalExchange.setBaseCurrency(base.get());
-            historicalExchange.setExchangeCurrency(target.get());
-            historicalExchange.setRate(rate.getValue());
-            historicalExchange.setTimestamp(timestamp);
-            historicalExchange.setDate(date);
+            HistoricalExchange historicalExchange =
+                    new HistoricalExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
             historicalExchangeRepository.save(historicalExchange);
 
             //Check if that exchange is already present in the LatestExchange table, if it is - update it
             Optional<LatestExchange> latestExchangeOptional =
                     latestExchangeRepository.findByBaseCurrencyAndExchangeCurrency(base.get(), target.get());
-            if (latestExchangeOptional.isEmpty()) {
-                LatestExchange exchange = new LatestExchange();
-                exchange.setBaseCurrency(base.get());
-                exchange.setExchangeCurrency(target.get());
+
+            latestExchangeOptional.ifPresentOrElse(latestExchange -> {
+                LatestExchange exchange = latestExchangeOptional.get();
                 exchange.setRate(rate.getValue());
-                exchange.setTimestamp(timestamp);
                 exchange.setDate(date);
+                exchange.setTimestamp(timestamp);
                 latestExchangeRepository.save(exchange);
-            } else {
-                LatestExchange latestExchange = latestExchangeOptional.get();
-                latestExchange.setRate(rate.getValue());
-                latestExchange.setDate(date);
-                latestExchange.setTimestamp(timestamp);
-                latestExchangeRepository.save(latestExchange);
-            }
+            }, () -> {
+                LatestExchange exchange =
+                        new LatestExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
+                latestExchangeRepository.save(exchange);
+            });
         }
     }
 }

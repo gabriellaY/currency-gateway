@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository;
 
 import com.currency.gateway.entity.Currency;
 
+/**
+ * 
+ */
 @Repository
 public interface CurrencyRepository extends JpaRepository<Currency, Long> {
 

@@ -10,11 +10,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "LATEST_EXCHANGE")
+@Getter
+@Setter
+@NoArgsConstructor
 public class LatestExchange {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -36,52 +42,13 @@ public class LatestExchange {
 
     @Column(name = "date", nullable = false)
     private Date date;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Currency getBaseCurrency() {
-        return baseCurrency;
-    }
-
-    public void setBaseCurrency(Currency baseCurrency) {
+    
+    public LatestExchange(Currency baseCurrency, Currency exchangeCurrency,
+                                         double rate, long timestamp, Date date) {
         this.baseCurrency = baseCurrency;
-    }
-
-    public Currency getExchangeCurrency() {
-        return exchangeCurrency;
-    }
-
-    public void setExchangeCurrency(Currency exchangeCurrency) {
         this.exchangeCurrency = exchangeCurrency;
-    }
-
-    public double getRate() {
-        return rate;
-    }
-
-    public void setRate(double rate) {
         this.rate = rate;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public Date getDate() {
-        return date;
-    }
-
-    public void setDate(Date date) {
         this.date = date;
     }
 }

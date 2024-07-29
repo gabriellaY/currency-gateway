@@ -1,6 +1,11 @@
 package com.currency.gateway;
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.sql.Date;
 import java.util.HashMap;
@@ -8,12 +13,15 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.currency.gateway.client.FixerClient;
 import com.currency.gateway.collector.RatesCollector;
+import com.currency.gateway.configuration.FixerConfig;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
@@ -22,12 +30,12 @@ import com.currency.gateway.model.FixerLatestRatesResponse;
 import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
+@SpringBootTest
+@ContextConfiguration(classes = {FixerConfig.class})
 public class RatesCollectorTests {
-    @InjectMocks
+
     private RatesCollector ratesCollector;
 
     @Mock
@@ -42,33 +50,34 @@ public class RatesCollectorTests {
     @Mock
     private CurrencyRepository currencyRepository;
 
-    @Test
-    void testCollectRatesSuccess() {
-        CurrenciesResponse currenciesResponse = new CurrenciesResponse();
-        currenciesResponse.setSuccess(true);
-        currenciesResponse.setSymbols(new HashMap<>() {{
-            put("USD", "United States Dollar");
-            put("EUR", "Euro");
-        }});
+    @BeforeEach
+    void setUp() {
+        ratesCollector = new RatesCollector(
+                fixerClient,
+                latestExchangeRepository,
+                historicalExchangeRepository,
+                currencyRepository
+        );
+    }
 
-        FixerLatestRatesResponse latestRatesResponse = new FixerLatestRatesResponse();
-        latestRatesResponse.setSuccess(true);
-        latestRatesResponse.setBase("EUR");
-        latestRatesResponse.setTimestamp(123456789);
-        latestRatesResponse.setDate(new Date(System.currentTimeMillis()));
-        latestRatesResponse.setRates(new HashMap<>() {{
-            put("USD", 1.1);
-        }});
+    @Test
+    void collectRatesSuccessTest() {
+        HashMap<String, String> currencies = new HashMap<>();
+        currencies.put("USD", "United States Dollar");
+        currencies.put("EUR", "Euro");
+        CurrenciesResponse currenciesResponse = new CurrenciesResponse(true, currencies);
+
+        HashMap<String, Double> rates = new HashMap<>();
+        rates.put("USD", 1.1);
+        FixerLatestRatesResponse latestRatesResponse =
+                new FixerLatestRatesResponse(true, 123456789, "EUR",
+                                             new Date(System.currentTimeMillis()), rates);
 
         when(fixerClient.getCurrencies()).thenReturn(currenciesResponse);
         when(fixerClient.getLatestRates()).thenReturn(latestRatesResponse);
 
-        Currency eur = new Currency();
-        eur.setName("Euro");
-        eur.setSymbol("EUR");
-        Currency usd = new Currency();
-        usd.setName("United States Dollar");
-        usd.setSymbol("USD");
+        Currency eur = new Currency("EUR", "Euro");
+        Currency usd = new Currency("USD", "United States Dollar");
 
         when(currencyRepository.findBySymbol("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findBySymbol("USD")).thenReturn(Optional.of(usd));
@@ -77,28 +86,22 @@ public class RatesCollectorTests {
 
         ratesCollector.collectRates();
 
-        verify(currencyRepository, times(2)).save(any(Currency.class));
         verify(historicalExchangeRepository, times(1)).save(any(HistoricalExchange.class));
         verify(latestExchangeRepository, times(1)).save(any(LatestExchange.class));
     }
 
     @Test
-    void testCollectRatesCurrencyNotFound() {
-        CurrenciesResponse currenciesResponse = new CurrenciesResponse();
-        currenciesResponse.setSuccess(true);
-        currenciesResponse.setSymbols(new HashMap<>() {{
-            put("USD", "United States Dollar");
-            put("EUR", "Euro");
-        }});
+    void collectRatesCurrencyNotFoundTest() {
+        HashMap<String, String> currencies = new HashMap<>();
+        currencies.put("USD", "United States Dollar");
+        currencies.put("EUR", "Euro");
+        CurrenciesResponse currenciesResponse = new CurrenciesResponse(true, currencies);
 
-        FixerLatestRatesResponse latestRatesResponse = new FixerLatestRatesResponse();
-        latestRatesResponse.setSuccess(true);
-        latestRatesResponse.setBase("EUR");
-        latestRatesResponse.setTimestamp(123456789);
-        latestRatesResponse.setDate(new Date(System.currentTimeMillis()));
-        latestRatesResponse.setRates(new HashMap<>() {{
-            put("USD", 1.1);
-        }});
+        HashMap<String, Double> rates = new HashMap<>();
+        rates.put("USD", 1.1);
+        FixerLatestRatesResponse latestRatesResponse =
+                new FixerLatestRatesResponse(true, 123456789, "EUR",
+                                             new Date(System.currentTimeMillis()), rates);
 
         when(fixerClient.getCurrencies()).thenReturn(currenciesResponse);
         when(fixerClient.getLatestRates()).thenReturn(latestRatesResponse);

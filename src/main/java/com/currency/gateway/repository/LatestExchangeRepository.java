@@ -10,5 +10,8 @@ import com.currency.gateway.entity.LatestExchange;
 
 @Repository
 public interface LatestExchangeRepository extends JpaRepository<LatestExchange, Long> {
+
     Optional<LatestExchange> findByBaseCurrencyAndExchangeCurrency(Currency baseCurrency, Currency exchangeCurrency);
+
+    Optional<LatestExchange> findByBaseCurrency(Currency baseCurrency);
 }

@@ -1,5 +1,6 @@
 package com.currency.gateway.model;
 
+import java.io.Serializable;
 import java.sql.Date;
 import java.util.HashMap;
 
@@ -15,7 +16,7 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @AllArgsConstructor
-public class FixerLatestRatesResponse {
+public class FixerLatestRatesResponse implements Serializable {
 
     @JsonProperty(value = "success")
     boolean success;

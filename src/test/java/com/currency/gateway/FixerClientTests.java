@@ -43,7 +43,7 @@ public class FixerClientTests {
         when(fixerConfig.getBaseUrl()).thenReturn("http://data.fixer.io/api");
         when(fixerConfig.getLatestRatesUrl()).thenReturn("/latest");
         when(fixerConfig.getCurrenciesUrl()).thenReturn("/symbols");
-        when(fixerConfig.getApiAccessKey()).thenReturn("test_access_key");
+        when(fixerConfig.getApiAccessKey()).thenReturn("access_key");
     }
 
     @Test

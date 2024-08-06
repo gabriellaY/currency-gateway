@@ -44,8 +44,7 @@ public class CurrencyJsonApiService {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
 
         LatestExchange latestExchange = latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency())
-                .orElseThrow(
-                        () -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
+                .orElseThrow(() -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
 
         log.info("Found latest exchange for currency {}", savedRequest.getCurrency().getSymbol());
         return new LatestExchangeResponse(latestExchange.getId(), latestExchange.getTimestamp(),

@@ -1,10 +1,9 @@
-package com.currency.gateway;
+package com.currency.gateway.client;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import java.sql.Date;
 import java.util.HashMap;
@@ -14,8 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.RestTemplate;
@@ -47,7 +44,7 @@ public class FixerClientTests {
     }
 
     @Test
-    void getLatestRatesTest() {
+    void testGetLatestRates() {
         String url = UriComponentsBuilder.fromHttpUrl(fixerConfig.getBaseUrl() + fixerConfig.getLatestRatesUrl())
                 .queryParam("access_key", fixerConfig.getApiAccessKey())
                 .toUriString();
@@ -66,7 +63,7 @@ public class FixerClientTests {
     }
 
     @Test
-    void getCurrenciesTest() {
+    void testGetCurrencies() {
         String url = UriComponentsBuilder.fromHttpUrl(fixerConfig.getBaseUrl() + fixerConfig.getCurrenciesUrl())
                 .queryParam("access_key", fixerConfig.getApiAccessKey())
                 .toUriString();

@@ -21,7 +21,6 @@ public class HistoricalExchangeResponse implements Serializable {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class HistoricalExchangeData {
-
         private long timestamp;
         private double rate;
     }

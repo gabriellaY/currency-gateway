@@ -1,13 +1,14 @@
 package com.currency.gateway.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import lombok.Data;
 
-@Configuration
-@ConfigurationProperties(prefix = "currency-gateway.fixer")
+
 @Data
+@ConfigurationProperties(prefix = "currency-gateway.fixer")
+@Component
 public class FixerConfig {
 
     private String baseUrl;

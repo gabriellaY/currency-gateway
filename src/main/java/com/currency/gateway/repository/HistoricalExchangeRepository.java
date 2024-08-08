@@ -17,6 +17,6 @@ public interface HistoricalExchangeRepository extends JpaRepository<HistoricalEx
     Optional<HistoricalExchange> findByBaseCurrency(Currency baseCurrency);
 
     @Query("SELECT he FROM HistoricalExchange he WHERE he.baseCurrency.symbol = :baseCurrency AND he.timestamp >= :timestamp")
-    Optional<List<HistoricalExchange>> findByBaseCurrencyAndTimestamp(@Param("baseCurrency") Currency baseCurrency,
+    Optional<List<HistoricalExchange>> findByBaseCurrencyAndTimestamp(@Param("baseCurrency") String baseCurrency,
                                                                       @Param("timestamp") long timestamp);
 }

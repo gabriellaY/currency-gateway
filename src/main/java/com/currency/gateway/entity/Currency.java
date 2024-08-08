@@ -27,7 +27,7 @@ public class Currency implements Serializable {
     @Column(name = "symbol", unique = true, nullable = false)
     private String symbol;
 
-    @Column(name = "name", unique = true, nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
     
     public Currency(String symbol, String name) {

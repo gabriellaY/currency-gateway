@@ -18,22 +18,22 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.currency.gateway.dto.LatestExchangeDto;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.mapper.LatestExchangeMapper;
 import com.currency.gateway.model.HistoricalExchangeRequest;
 import com.currency.gateway.model.HistoricalExchangeResponse;
 import com.currency.gateway.model.LatestExchangeRequest;
 import com.currency.gateway.model.LatestExchangeResponse;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
-import com.currency.gateway.service.ApiRequestService;
-import com.currency.gateway.service.CurrencyJsonApiService;
 
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
-public class CurrencyJsonApiServiceTests {
+public class ExchangeApiServiceTests {
 
     @Mock
     private LatestExchangeRepository latestExchangeRepository;
@@ -43,9 +43,12 @@ public class CurrencyJsonApiServiceTests {
 
     @Mock
     private ApiRequestService apiRequestService;
+    
+    @Mock
+    private LatestExchangeMapper latestExchangeMapper;
 
     @InjectMocks
-    private CurrencyJsonApiService currencyJsonApiService;
+    private ExchangeApiService exchangeApiService;
 
 
     @Test
@@ -57,23 +60,28 @@ public class CurrencyJsonApiServiceTests {
         ApiRequest savedRequest = new ApiRequest();
         savedRequest.setCurrency(currency);
 
+        Currency exchangeCurrency = new Currency("EUR", "Euro");
         LatestExchange latestExchange = new LatestExchange();
         latestExchange.setId(1L);
         latestExchange.setTimestamp(System.currentTimeMillis());
         latestExchange.setBaseCurrency(currency);
+        latestExchange.setExchangeCurrency(exchangeCurrency);
         latestExchange.setRate(1.234);
+        List<LatestExchange> exchangeList = new ArrayList<>();
+        exchangeList.add(latestExchange);
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
         when(latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency()))
-                .thenReturn(Optional.of(latestExchange));
+                .thenReturn(Optional.of(exchangeList));
 
-        LatestExchangeResponse response = currencyJsonApiService.processLatestExchangeRequest(request);
+        LatestExchangeResponse response = exchangeApiService.processLatestExchangeRequest(request);
+        List<LatestExchangeDto> exchanges = response.getLatestExchanges();
 
         assertNotNull(response);
-        assertEquals(1L, response.getId());
-        assertEquals(latestExchange.getBaseCurrency().getSymbol(), response.getCurrency());
-        assertEquals(latestExchange.getRate(), response.getRate());
+        assertEquals(1, exchanges.size());
+        assertEquals(latestExchange.getBaseCurrency().getSymbol(), exchanges.get(0).getCurrency());
+        assertEquals(latestExchange.getRate(), exchanges.get(0).getRate());
     }
 
     @Test
@@ -91,7 +99,7 @@ public class CurrencyJsonApiServiceTests {
                 .thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> {
-            currencyJsonApiService.processLatestExchangeRequest(request);
+            exchangeApiService.processLatestExchangeRequest(request);
         });
     }
 
@@ -118,10 +126,10 @@ public class CurrencyJsonApiServiceTests {
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency()), anyLong()))
+        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency().getSymbol()), anyLong()))
                 .thenReturn(Optional.of(historicalExchangeList));
 
-        HistoricalExchangeResponse response = currencyJsonApiService.processHistoryRequest(request);
+        HistoricalExchangeResponse response = exchangeApiService.processHistoryRequest(request);
 
         assertNotNull(response);
         assertEquals(savedRequest.getTimestamp(), response.getTimestamp());
@@ -150,11 +158,11 @@ public class CurrencyJsonApiServiceTests {
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency()), anyLong()))
+        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency().getSymbol()), anyLong()))
                 .thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> {
-            currencyJsonApiService.processHistoryRequest(request);
+            exchangeApiService.processHistoryRequest(request);
         });
     }
 }

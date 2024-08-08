@@ -3,7 +3,6 @@ package com.currency.gateway.service;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApiRequestService {
 
-    private final Set<UUID> processedRequestIds = new HashSet<>();
+    private final Set<String> processedRequestIds = new HashSet<>();
     private final CurrencyRepository currencyRepository;
     private final ApiRequestRepository apiRequestRepository;
 
@@ -33,7 +32,7 @@ public class ApiRequestService {
         this.apiRequestRepository = apiRequestRepository;
     }
 
-    public synchronized boolean isDuplicate(UUID requestId) {
+    public synchronized boolean isDuplicate(String requestId) {
         return !processedRequestIds.add(requestId);
     }
 

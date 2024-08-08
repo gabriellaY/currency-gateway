@@ -5,10 +5,13 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.currency.gateway.dto.LatestExchangeDto;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.mapper.LatestExchangeMapper;
 import com.currency.gateway.model.HistoricalExchangeRequest;
 import com.currency.gateway.model.HistoricalExchangeResponse;
 import com.currency.gateway.model.LatestExchangeRequest;
@@ -23,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class CurrencyJsonApiService {
+public class ExchangeApiService {
 
     private final LatestExchangeRepository latestExchangeRepository;
 
@@ -31,26 +34,35 @@ public class CurrencyJsonApiService {
 
     private final ApiRequestService apiRequestService;
 
+    private final LatestExchangeMapper latestExchangeMapper;
+
     @Autowired
-    public CurrencyJsonApiService(LatestExchangeRepository latestExchangeRepository,
-                                  HistoricalExchangeRepository historicalExchangeRepository,
-                                  ApiRequestService apiRequestService) {
+    public ExchangeApiService(LatestExchangeRepository latestExchangeRepository,
+                              HistoricalExchangeRepository historicalExchangeRepository,
+                              ApiRequestService apiRequestService, LatestExchangeMapper latestExchangeMapper) {
         this.latestExchangeRepository = latestExchangeRepository;
         this.historicalExchangeRepository = historicalExchangeRepository;
         this.apiRequestService = apiRequestService;
+        this.latestExchangeMapper = latestExchangeMapper;
     }
 
+    @Transactional
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
 
-        LatestExchange latestExchange = latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency())
-                .orElseThrow(() -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
+        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency())
+                .orElseThrow(
+                        () -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
+
+        List<LatestExchangeDto> dtoList = latestExchange.stream()
+                .map(latestExchangeMapper::toDto)
+                .toList();
 
         log.info("Found latest exchange for currency {}", savedRequest.getCurrency().getSymbol());
-        return new LatestExchangeResponse(latestExchange.getId(), latestExchange.getTimestamp(),
-                                          latestExchange.getBaseCurrency().getSymbol(), latestExchange.getRate());
+        return new LatestExchangeResponse(dtoList);
     }
 
+    @Transactional
     public HistoricalExchangeResponse processHistoryRequest(HistoricalExchangeRequest request) {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
 
@@ -60,7 +72,7 @@ public class CurrencyJsonApiService {
         long startTime = currentTimeMillis - periodInMillis;
 
         List<HistoricalExchange> historicalExchangeData =
-                historicalExchangeRepository.findByBaseCurrencyAndTimestamp(savedRequest.getCurrency(), startTime)
+                historicalExchangeRepository.findByBaseCurrencyAndTimestamp(request.getCurrency(), startTime)
                         .orElseThrow(() -> new RuntimeException("No historical exchange data found for currency: "
                                                                 + request.getCurrency()));
 

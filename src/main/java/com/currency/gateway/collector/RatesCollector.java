@@ -6,7 +6,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.currency.gateway.client.FixerClient;
 import com.currency.gateway.entity.Currency;
@@ -23,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Rates collector getting current and historical exchange data and saving it to the DB.
  */
-@Component
 @Slf4j
+@Service
 public class RatesCollector {
 
     final FixerClient fixerClient;
@@ -41,13 +42,13 @@ public class RatesCollector {
         this.historicalExchangeRepository = historicalExchangeRepository;
         this.currencyRepository = currencyRepository;
     }
-
+    
     @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
+    @Transactional
     public void collectRates() {
         log.info("Collecting currency rates.");
         //First collect currency symbols to make sure all available currencies are present in the DB.
         CurrenciesResponse currenciesResponse = fixerClient.getCurrencies();
-
         if (currenciesResponse != null && currenciesResponse.isSuccess()) {
             saveCurrenciesToDb(currenciesResponse);
         }
@@ -60,7 +61,8 @@ public class RatesCollector {
         }
     }
 
-    private void saveCurrenciesToDb(CurrenciesResponse currenciesResponse) {
+    @Transactional
+    public void saveCurrenciesToDb(CurrenciesResponse currenciesResponse) {
         HashMap<String, String> currencies = currenciesResponse.getSymbols();
 
         for (HashMap.Entry<String, String> c : currencies.entrySet()) {
@@ -78,7 +80,8 @@ public class RatesCollector {
         }
     }
 
-    private void saveRatesToDb(FixerLatestRatesResponse latestRates) {
+    @Transactional
+    public void saveRatesToDb(FixerLatestRatesResponse latestRates) {
         String baseCurrency = latestRates.getBase();
         long timestamp = latestRates.getTimestamp();
         Date date = latestRates.getDate();
@@ -115,6 +118,43 @@ public class RatesCollector {
                         new LatestExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
                 latestExchangeRepository.save(exchange);
             });
+        }
+    }
+
+    //Used for testing
+    public void collectRatesMock() {
+        log.info("Collecting currency rates.");
+
+        // Mocked response for CurrenciesResponse
+        var currenciesResponse = new CurrenciesResponse(true,new HashMap<>() {{
+            put("USD", "United States Dollar");
+            put("EUR", "Euro");
+            put("GBP", "British Pound Sterling");
+            put("JPY", "Japanese Yen");
+            put("AUD", "Australian Dollar");
+            // Add more currency symbols as needed
+        }});
+
+        if (currenciesResponse.isSuccess()) {
+            saveCurrenciesToDb(currenciesResponse);
+        }
+
+        // Mocked response for FixerLatestRatesResponse
+        var latestRatesResponse = new FixerLatestRatesResponse();
+        latestRatesResponse.setBase("USD");
+        latestRatesResponse.setTimestamp(System.currentTimeMillis() / 1000L);
+        latestRatesResponse.setDate(new Date(System.currentTimeMillis()));
+        latestRatesResponse.setRates(new HashMap<>() {{
+            put("EUR", 0.85);
+            put("GBP", 0.75);
+            put("JPY", 110.0);
+            put("AUD", 1.35);
+            // Add more rates as needed
+        }});
+        latestRatesResponse.setSuccess(true);
+
+        if (latestRatesResponse.isSuccess()) {
+            saveRatesToDb(latestRatesResponse);
         }
     }
 }

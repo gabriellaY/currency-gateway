@@ -1,9 +1,7 @@
 package com.currency.gateway.entity;
 
 import java.io.Serializable;
-import java.util.UUID;
 
-import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -23,7 +21,7 @@ public class ApiRequest implements Serializable {
 
     @Id
     @Column(name = "request_id", unique = true, nullable = false)
-    private UUID id;
+    private String id;
 
     @Column(name = "end_user_id", nullable = false)
     private String endUserID;
@@ -38,7 +36,7 @@ public class ApiRequest implements Serializable {
     @Column(name = "timestamp", nullable = false)
     private long timestamp;
     
-    public ApiRequest(UUID id, String endUserID, Currency currency, Integer period, long timestamp) {
+    public ApiRequest(String id, String endUserID, Currency currency, Integer period, long timestamp) {
         this.id = id;
         this.endUserID = endUserID;
         this.currency = currency;

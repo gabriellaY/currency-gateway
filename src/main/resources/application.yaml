@@ -1,13 +1,33 @@
 spring:
+  application:
+    name: CurrencyGateway
   profiles:
-    active: local
+    active: mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/currency_info_gateway
+    username: root
+    password: 12345678
+    initialize: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+          show_sql: false
+          use_sql_comments: true
+          format_sql: true
+          type: trace
+  logging:
+    level:
+      org.hibernate: TRACE
 
 currency-gateway:
   fixer:
-    apiAccessKey: ${FIXER_API_ACCESS_KEY:test}
+    apiAccessKey: 9536cbefbb6c172a961d4943bece59d4
     baseUrl: http://data.fixer.io/api
     latestRatesUrl: /latest
     currenciesUrl: /symbols
   schedules:
-#    run twice a day, at midnight and at noon, every day
-    rates-collector: "0 0 0,12 * * ?" 
+    rates-collector: "0 0 0,12 * * ?"

@@ -42,7 +42,7 @@ public class ApiRequestServiceTests {
 
     @Test
     void testIsDuplicate() {
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
 
         boolean isDuplicate = apiRequestService.isDuplicate(requestId);
         assertFalse(isDuplicate);
@@ -54,7 +54,7 @@ public class ApiRequestServiceTests {
     @Test
     void testProcessApiRequest() {
         LatestExchangeRequest request = new LatestExchangeRequest();
-        request.setRequestId(UUID.randomUUID());
+        request.setRequestId(UUID.randomUUID().toString());
         request.setClient("1234");
         request.setCurrency("EUR");
         request.setTimestamp(System.currentTimeMillis());
@@ -81,7 +81,7 @@ public class ApiRequestServiceTests {
     @Test
     void testProcessApiRequestCurrencyNotFound() {
         ExchangeApiRequest request = new LatestExchangeRequest();
-        request.setRequestId(UUID.randomUUID());
+        request.setRequestId(UUID.randomUUID().toString());
         request.setClient("1234");
         request.setCurrency("EUR");
         request.setTimestamp(System.currentTimeMillis());

@@ -2,7 +2,6 @@ package com.currency.gateway.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data

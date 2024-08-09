@@ -2,11 +2,9 @@ package com.currency.gateway.model;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class HistoricalExchangeXmlRequest {
     @JacksonXmlProperty(isAttribute = true)
     private String consumer;

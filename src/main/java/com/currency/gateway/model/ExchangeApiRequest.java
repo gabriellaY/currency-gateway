@@ -26,4 +26,7 @@ public abstract class ExchangeApiRequest implements Serializable {
 
     @JsonProperty(value = "currency")
     private String currency;
+    
+    @JsonProperty(value = "service")
+    private String service;
 }

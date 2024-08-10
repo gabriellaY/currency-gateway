@@ -1,4 +1,4 @@
-package com.currency.gateway.model;
+package com.currency.gateway.model.historicalexchange;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 

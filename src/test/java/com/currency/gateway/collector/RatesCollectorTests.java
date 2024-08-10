@@ -14,13 +14,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.currency.gateway.client.FixerClient;
-import com.currency.gateway.collector.RatesCollector;
 import com.currency.gateway.configuration.FixerConfig;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
@@ -36,8 +36,6 @@ import com.currency.gateway.repository.LatestExchangeRepository;
 @ContextConfiguration(classes = {FixerConfig.class})
 public class RatesCollectorTests {
 
-    private RatesCollector ratesCollector;
-
     @Mock
     private FixerClient fixerClient;
 
@@ -49,6 +47,9 @@ public class RatesCollectorTests {
 
     @Mock
     private CurrencyRepository currencyRepository;
+
+    @InjectMocks
+    private RatesCollector ratesCollector;
 
     @BeforeEach
     void setUp() {

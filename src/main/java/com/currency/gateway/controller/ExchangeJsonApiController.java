@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.currency.gateway.collector.RatesCollector;
 import com.currency.gateway.entity.Currency;
-import com.currency.gateway.model.HistoricalExchangeRequest;
-import com.currency.gateway.model.HistoricalExchangeResponse;
-import com.currency.gateway.model.LatestExchangeRequest;
-import com.currency.gateway.model.LatestExchangeResponse;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
+import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
 import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.service.ApiRequestService;
 import com.currency.gateway.service.ExchangeApiService;
@@ -81,5 +81,4 @@ public class ExchangeJsonApiController {
         List<Currency> currencies = currencyRepository.findAll();
         return ResponseEntity.ok(currencies);
     }
-
 }

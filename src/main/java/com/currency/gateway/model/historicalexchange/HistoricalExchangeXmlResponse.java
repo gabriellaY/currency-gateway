@@ -1,4 +1,4 @@
-package com.currency.gateway.model;
+package com.currency.gateway.model.historicalexchange;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @JacksonXmlRootElement(localName = "response")
 @AllArgsConstructor
-public class LatestExchangeXmlResponse {
+public class HistoricalExchangeXmlResponse {
 
-    LatestExchangeResponse latestExchangeData;
+    HistoricalExchangeResponse history;
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,12 +21,15 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.currency.gateway.collector.StatisticsCollector;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
+import com.currency.gateway.entity.Service;
 import com.currency.gateway.model.ExchangeApiRequest;
-import com.currency.gateway.model.LatestExchangeRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
 import com.currency.gateway.repository.ApiRequestRepository;
 import com.currency.gateway.repository.CurrencyRepository;
+import com.currency.gateway.repository.ServiceRepository;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -36,6 +40,12 @@ public class ApiRequestServiceTests {
 
     @Mock
     private ApiRequestRepository apiRequestRepository;
+    
+    @Mock
+    private ServiceRepository serviceRepository;
+    
+    @Mock
+    private StatisticsCollector statisticsCollector;
 
     @InjectMocks
     private ApiRequestService apiRequestService;
@@ -54,28 +64,38 @@ public class ApiRequestServiceTests {
     @Test
     void testProcessApiRequest() {
         LatestExchangeRequest request = new LatestExchangeRequest();
-        request.setRequestId(UUID.randomUUID().toString());
-        request.setClient("1234");
-        request.setCurrency("EUR");
-        request.setTimestamp(System.currentTimeMillis());
+        Service service = new Service();
+        service.setName("EXT_SERVICE_1");
 
         Currency currency = new Currency();
         currency.setSymbol("EUR");
         currency.setName("Euro");
+        
+        request.setRequestId(UUID.randomUUID().toString());
+        request.setService(service.getName());
+        request.setClient("1234");
+        request.setCurrency(currency.getSymbol());
+        request.setTimestamp(System.currentTimeMillis());
+        
+        ApiRequest savedApiRequest = new ApiRequest();
+        savedApiRequest.setService(service);
+        savedApiRequest.setTimestamp(request.getTimestamp());
+        savedApiRequest.setEndUserID(request.getClient());
+        savedApiRequest.setId(request.getRequestId());
 
         when(currencyRepository.findBySymbol(request.getCurrency())).thenReturn(Optional.of(currency));
         when(apiRequestRepository.save(any(ApiRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(serviceRepository.findByName(anyString())).thenReturn(Optional.of(new Service()));
+        when(statisticsCollector.saveApiRequestStatistics(any(ApiRequest.class))).thenReturn(savedApiRequest);
 
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
 
         assertNotNull(savedRequest);
         assertEquals(request.getRequestId(), savedRequest.getId());
         assertEquals(request.getClient(), savedRequest.getEndUserID());
-        assertEquals(currency, savedRequest.getCurrency());
         assertEquals(request.getTimestamp(), savedRequest.getTimestamp());
 
         verify(currencyRepository, times(1)).findBySymbol("EUR");
-        verify(apiRequestRepository, times(1)).save(any(ApiRequest.class));
     }
 
     @Test

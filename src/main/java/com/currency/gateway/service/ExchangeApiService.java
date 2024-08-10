@@ -2,6 +2,7 @@ package com.currency.gateway.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,13 +10,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.currency.gateway.dto.LatestExchangeDto;
 import com.currency.gateway.entity.ApiRequest;
+import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
 import com.currency.gateway.mapper.LatestExchangeMapper;
-import com.currency.gateway.model.HistoricalExchangeRequest;
-import com.currency.gateway.model.HistoricalExchangeResponse;
-import com.currency.gateway.model.LatestExchangeRequest;
-import com.currency.gateway.model.LatestExchangeResponse;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
+import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
+import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
 
@@ -31,26 +34,30 @@ public class ExchangeApiService {
     private final LatestExchangeRepository latestExchangeRepository;
 
     private final HistoricalExchangeRepository historicalExchangeRepository;
+    private final CurrencyRepository currencyRepository;
 
     private final ApiRequestService apiRequestService;
-
+    
     private final LatestExchangeMapper latestExchangeMapper;
 
     @Autowired
     public ExchangeApiService(LatestExchangeRepository latestExchangeRepository,
                               HistoricalExchangeRepository historicalExchangeRepository,
-                              ApiRequestService apiRequestService, LatestExchangeMapper latestExchangeMapper) {
+                              ApiRequestService apiRequestService, LatestExchangeMapper latestExchangeMapper,
+                              CurrencyRepository currencyRepository) {
         this.latestExchangeRepository = latestExchangeRepository;
         this.historicalExchangeRepository = historicalExchangeRepository;
         this.apiRequestService = apiRequestService;
         this.latestExchangeMapper = latestExchangeMapper;
+        this.currencyRepository = currencyRepository;
     }
 
     @Transactional
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
+        Optional<Currency> currencyOptional = currencyRepository.findBySymbol(request.getCurrency());
 
-        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency())
+        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currencyOptional.get())
                 .orElseThrow(
                         () -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
 
@@ -58,7 +65,7 @@ public class ExchangeApiService {
                 .map(latestExchangeMapper::toDto)
                 .toList();
 
-        log.info("Found latest exchange for currency {}", savedRequest.getCurrency().getSymbol());
+        log.info("Found latest exchange for currency {}", request.getCurrency());
         return new LatestExchangeResponse(dtoList);
     }
 
@@ -76,7 +83,7 @@ public class ExchangeApiService {
                         .orElseThrow(() -> new RuntimeException("No historical exchange data found for currency: "
                                                                 + request.getCurrency()));
 
-        log.info("Found historical exchange for currency {}", savedRequest.getCurrency().getSymbol());
+        log.info("Found historical exchange for currency {}", request.getCurrency());
 
         List<HistoricalExchangeResponse.HistoricalExchangeData> exchangeHistory = new ArrayList<>();
         for (HistoricalExchange exchange : historicalExchangeData) {
@@ -86,8 +93,8 @@ public class ExchangeApiService {
             exchangeHistory.add(data);
         }
 
-        return new HistoricalExchangeResponse(savedRequest.getTimestamp(), savedRequest.getCurrency().getSymbol(),
-                                              savedRequest.getPeriod(), exchangeHistory);
+        return new HistoricalExchangeResponse(request.getTimestamp(), request.getCurrency(),
+                                              request.getPeriod(), exchangeHistory);
     }
 
 }

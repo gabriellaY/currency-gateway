@@ -12,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "API_REQUESTS")
+@Table(name = "API_REQUESTS_STATISTICS")
 @Data
 @NoArgsConstructor
 public class ApiRequest implements Serializable {
@@ -21,24 +21,20 @@ public class ApiRequest implements Serializable {
     @Column(name = "request_id", unique = true, nullable = false)
     private String id;
 
+    @ManyToOne
+    @JoinColumn(name = "service_id", referencedColumnName = "id", nullable = false)
+    private Service service;
+
     @Column(name = "end_user_id", nullable = false)
     private String endUserID;
-
-    @ManyToOne
-    @JoinColumn(name = "currency_id", referencedColumnName = "id", nullable = false)
-    private Currency currency;
-
-    @Column(name = "period")
-    private int period;
 
     @Column(name = "timestamp", nullable = false)
     private long timestamp;
     
-    public ApiRequest(String id, String endUserID, Currency currency, Integer period, long timestamp) {
+    public ApiRequest(String id, Service service, String endUserID, long timestamp) {
         this.id = id;
+        this.service = service;
         this.endUserID = endUserID;
-        this.currency = currency;
-        this.period = period;
         this.timestamp = timestamp;
     }
 }

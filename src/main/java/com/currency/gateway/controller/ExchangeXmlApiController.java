@@ -1,6 +1,5 @@
 package com.currency.gateway.controller;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -11,14 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.currency.gateway.model.Command;
-import com.currency.gateway.model.HistoricalExchangeRequest;
-import com.currency.gateway.model.HistoricalExchangeResponse;
-import com.currency.gateway.model.HistoricalExchangeXmlRequest;
-import com.currency.gateway.model.HistoricalExchangeXmlResponse;
-import com.currency.gateway.model.LatestExchangeRequest;
-import com.currency.gateway.model.LatestExchangeResponse;
-import com.currency.gateway.model.LatestExchangeXmlRequest;
-import com.currency.gateway.model.LatestExchangeXmlResponse;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeXmlRequest;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeXmlResponse;
+import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
+import com.currency.gateway.model.latestexchange.LatestExchangeXmlRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeXmlResponse;
 import com.currency.gateway.service.ApiRequestService;
 import com.currency.gateway.service.ExchangeApiService;
 
@@ -45,11 +44,10 @@ public class ExchangeXmlApiController {
             log.info("Processing latest exchange XML request.");
             LatestExchangeXmlRequest latestExchangeXmlRequest = command.getLatestExchangeXmlRequest();
 
-            LatestExchangeRequest request = new LatestExchangeRequest();
-            request.setRequestId(command.getId());
-            request.setClient(latestExchangeXmlRequest.getConsumer());
-            request.setCurrency(latestExchangeXmlRequest.getCurrency());
-            request.setTimestamp(System.currentTimeMillis());
+            LatestExchangeRequest request =
+                    new LatestExchangeRequest(command.getId(), latestExchangeXmlRequest.getCurrency(),
+                                              latestExchangeXmlRequest.getConsumer(), System.currentTimeMillis(),
+                                              command.getService());
 
             if (apiRequestService.isDuplicate(request.getRequestId())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
@@ -67,12 +65,11 @@ public class ExchangeXmlApiController {
 
             HistoricalExchangeXmlRequest historicalExchangeXmlRequest = command.getHistoricalExchangeXmlRequest();
 
-            HistoricalExchangeRequest request = new HistoricalExchangeRequest();
-            request.setRequestId(command.getId());
-            request.setClient(historicalExchangeXmlRequest.getConsumer());
-            request.setCurrency(historicalExchangeXmlRequest.getCurrency());
-            request.setTimestamp(System.currentTimeMillis());
-            request.setPeriod(historicalExchangeXmlRequest.getPeriod());
+            HistoricalExchangeRequest request =
+                    new HistoricalExchangeRequest(command.getId(), historicalExchangeXmlRequest.getCurrency(),
+                                                  historicalExchangeXmlRequest.getConsumer(),
+                                                  System.currentTimeMillis(), historicalExchangeXmlRequest.getPeriod(),
+                                                  command.getService());
 
             if (apiRequestService.isDuplicate(request.getRequestId())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");

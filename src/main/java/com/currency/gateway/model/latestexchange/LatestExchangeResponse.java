@@ -1,4 +1,4 @@
-package com.currency.gateway.model;
+package com.currency.gateway.model.latestexchange;
 
 import java.io.Serializable;
 import java.util.List;

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -24,10 +25,11 @@ import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
 import com.currency.gateway.mapper.LatestExchangeMapper;
-import com.currency.gateway.model.HistoricalExchangeRequest;
-import com.currency.gateway.model.HistoricalExchangeResponse;
-import com.currency.gateway.model.LatestExchangeRequest;
-import com.currency.gateway.model.LatestExchangeResponse;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
+import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
+import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
+import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
 
@@ -40,6 +42,9 @@ public class ExchangeApiServiceTests {
 
     @Mock
     private HistoricalExchangeRepository historicalExchangeRepository;
+    
+    @Mock
+    private CurrencyRepository currencyRepository;
 
     @Mock
     private ApiRequestService apiRequestService;
@@ -58,7 +63,6 @@ public class ExchangeApiServiceTests {
 
         Currency currency = new Currency("USD", "US dollar");
         ApiRequest savedRequest = new ApiRequest();
-        savedRequest.setCurrency(currency);
 
         Currency exchangeCurrency = new Currency("EUR", "Euro");
         LatestExchange latestExchange = new LatestExchange();
@@ -76,8 +80,10 @@ public class ExchangeApiServiceTests {
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency()))
+        when(latestExchangeRepository.findByBaseCurrency(currency))
                 .thenReturn(Optional.of(exchangeList));
+        when(currencyRepository.findBySymbol(request.getCurrency()))
+                .thenReturn(Optional.of(currency));
         when(latestExchangeMapper.toDto(latestExchange))
                 .thenReturn(latestExchangeDto);
 
@@ -97,11 +103,10 @@ public class ExchangeApiServiceTests {
 
         Currency currency = new Currency("USD", "US dollar");
         ApiRequest savedRequest = new ApiRequest();
-        savedRequest.setCurrency(currency);
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(latestExchangeRepository.findByBaseCurrency(savedRequest.getCurrency()))
+        when(latestExchangeRepository.findByBaseCurrency(currency))
                 .thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> {
@@ -113,15 +118,17 @@ public class ExchangeApiServiceTests {
     public void testProcessHistoryRequest() {
         int period = 24;
         long startTime = System.currentTimeMillis() - period * 3600000L;
+        long requestTimestamp = System.currentTimeMillis();
 
+        Currency currency = new Currency("USD", "US dollar");
+        
         HistoricalExchangeRequest request = new HistoricalExchangeRequest();
-        request.setCurrency("USD");
+        request.setCurrency(currency.getSymbol());
         request.setPeriod(period);
-
+        request.setTimestamp(requestTimestamp);
+        
         ApiRequest savedRequest = new ApiRequest();
-        savedRequest.setCurrency(new Currency("USD", "US dollar"));
-        savedRequest.setTimestamp(System.currentTimeMillis());
-        savedRequest.setPeriod(period);
+        savedRequest.setTimestamp(requestTimestamp);
 
         HistoricalExchange historicalExchange = new HistoricalExchange();
         historicalExchange.setTimestamp(startTime);
@@ -132,15 +139,14 @@ public class ExchangeApiServiceTests {
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency().getSymbol()),
-                                                                         anyLong()))
+        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(anyString(), anyLong()))
                 .thenReturn(Optional.of(historicalExchangeList));
 
         HistoricalExchangeResponse response = exchangeApiService.processHistoryRequest(request);
 
         assertNotNull(response);
         assertEquals(savedRequest.getTimestamp(), response.getTimestamp());
-        assertEquals(savedRequest.getCurrency().getSymbol(), response.getCurrency());
+        assertEquals("USD", response.getCurrency());
         assertEquals(period, response.getPeriod());
 
         List<HistoricalExchangeResponse.HistoricalExchangeData> exchangeHistory = response.getExchangeHistory();
@@ -159,13 +165,12 @@ public class ExchangeApiServiceTests {
         request.setPeriod(period);
 
         ApiRequest savedRequest = new ApiRequest();
-        savedRequest.setCurrency(new Currency("USD", "US dollar"));
+        Currency currency = new Currency("USD", "US dollar");
         savedRequest.setTimestamp(System.currentTimeMillis());
-        savedRequest.setPeriod(period);
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
-        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(savedRequest.getCurrency().getSymbol()),
+        when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(eq(currency.getSymbol()),
                                                                          anyLong()))
                 .thenReturn(Optional.empty());
 

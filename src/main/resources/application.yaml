@@ -6,12 +6,12 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/currency_info_gateway
-    username: root
-    password: 12345678
+    username: ${DB_USERNAME:test}
+    password: ${DB_PASSWORD:test}
     initialize: true
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
       show-sql: true
       properties:
         hibernate:
@@ -25,7 +25,7 @@ spring:
 
 currency-gateway:
   fixer:
-    apiAccessKey: 9536cbefbb6c172a961d4943bece59d4
+    apiAccessKey: ${FIXER_API_ACCESS_KEY:test}
     baseUrl: http://data.fixer.io/api
     latestRatesUrl: /latest
     currenciesUrl: /symbols

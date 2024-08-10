@@ -13,6 +13,7 @@ import com.currency.gateway.client.FixerClient;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.exception.CurrencyNotFoundException;
 import com.currency.gateway.model.CurrenciesResponse;
 import com.currency.gateway.model.FixerLatestRatesResponse;
 import com.currency.gateway.repository.CurrencyRepository;
@@ -93,10 +94,10 @@ public class RatesCollector {
             Optional<Currency> target = currencyRepository.findBySymbol(rate.getKey());
 
             if (base.isEmpty()) {
-                throw new RuntimeException(String.format("Base currency (%s) not present in the DB.", baseCurrency));
+                throw new CurrencyNotFoundException(String.format("Base currency (%s) not present in the DB.", baseCurrency));
             }
             if (target.isEmpty()) {
-                throw new RuntimeException(String.format("Target currency (%s) not present in the DB.", rate.getKey()));
+                throw new CurrencyNotFoundException(String.format("Target currency (%s) not present in the DB.", rate.getKey()));
             }
 
             HistoricalExchange historicalExchange =

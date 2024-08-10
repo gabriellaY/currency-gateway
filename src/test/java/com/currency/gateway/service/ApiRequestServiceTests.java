@@ -25,6 +25,7 @@ import com.currency.gateway.collector.StatisticsCollector;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.Service;
+import com.currency.gateway.exception.CurrencyNotFoundException;
 import com.currency.gateway.model.ExchangeApiRequest;
 import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
 import com.currency.gateway.repository.ApiRequestRepository;
@@ -108,7 +109,7 @@ public class ApiRequestServiceTests {
 
         when(currencyRepository.findBySymbol("EUR")).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Exception exception = assertThrows(CurrencyNotFoundException.class, () -> {
             apiRequestService.processApiRequest(request);
         });
 

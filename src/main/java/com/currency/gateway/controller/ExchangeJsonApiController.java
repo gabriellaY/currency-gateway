@@ -3,6 +3,7 @@ package com.currency.gateway.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,11 +45,11 @@ public class ExchangeJsonApiController {
     CurrencyRepository currencyRepository;
 
     @PostMapping(value = "/current", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<LatestExchangeResponse> processGetLatestExchange(@RequestBody LatestExchangeRequest request) {
+    public ResponseEntity<?> processGetLatestExchange(@RequestBody LatestExchangeRequest request) {
         log.info("Get latest exchange data for currency {}", request.getCurrency());
         if (apiRequestService.isDuplicate(request.getRequestId())) {
-            log.error("Duplicated api request.");
-            return ResponseEntity.status(409).body(new LatestExchangeResponse());
+            log.error("Duplicated api request for latest exchange. Request ID: {}", request.getRequestId());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
         }
 
         LatestExchangeResponse response = exchangeApiService.processLatestExchangeRequest(request);
@@ -57,12 +58,12 @@ public class ExchangeJsonApiController {
 
     @PostMapping(value = "/history", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<HistoricalExchangeResponse> processGetHistoricalExchange(
+    public ResponseEntity<?> processGetHistoricalExchange(
             @RequestBody HistoricalExchangeRequest request) {
         log.info("Get historical exchange data for currency {}", request.getCurrency());
         if (apiRequestService.isDuplicate(request.getRequestId())) {
-            log.error("Duplicated api request.");
-            return ResponseEntity.status(409).body(new HistoricalExchangeResponse());
+            log.error("Duplicated api request for exchange history. Request ID: {}", request.getRequestId());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
         }
 
         HistoricalExchangeResponse response = exchangeApiService.processHistoryRequest(request);

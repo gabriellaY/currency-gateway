@@ -13,6 +13,8 @@ import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.exception.CurrencyNotFoundException;
+import com.currency.gateway.exception.ExchangeDataNotFoundException;
 import com.currency.gateway.mapper.LatestExchangeMapper;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
@@ -55,11 +57,12 @@ public class ExchangeApiService {
     @Transactional
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
-        Optional<Currency> currencyOptional = currencyRepository.findBySymbol(request.getCurrency());
+        Currency currency = currencyRepository.findBySymbol(request.getCurrency())
+                .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));;
 
-        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currencyOptional.get())
+        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency)
                 .orElseThrow(
-                        () -> new RuntimeException("No exchange data found for currency: " + request.getCurrency()));
+                        () -> new ExchangeDataNotFoundException("No exchange data found for currency: " + request.getCurrency()));
 
         List<LatestExchangeDto> dtoList = latestExchange.stream()
                 .map(latestExchangeMapper::toDto)
@@ -80,7 +83,7 @@ public class ExchangeApiService {
 
         List<HistoricalExchange> historicalExchangeData =
                 historicalExchangeRepository.findByBaseCurrencyAndTimestamp(request.getCurrency(), startTime)
-                        .orElseThrow(() -> new RuntimeException("No historical exchange data found for currency: "
+                        .orElseThrow(() -> new ExchangeDataNotFoundException("No historical exchange data found for currency: "
                                                                 + request.getCurrency()));
 
         log.info("Found historical exchange for currency {}", request.getCurrency());

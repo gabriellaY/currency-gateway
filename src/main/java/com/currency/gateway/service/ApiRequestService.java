@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.currency.gateway.collector.StatisticsCollector;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
+import com.currency.gateway.exception.CurrencyNotFoundException;
+import com.currency.gateway.exception.ServiceNotFoundException;
 import com.currency.gateway.model.ExchangeApiRequest;
 import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.ServiceRepository;
@@ -44,15 +46,11 @@ public class ApiRequestService {
 
     @Transactional
     public ApiRequest processApiRequest(ExchangeApiRequest request) {
-        Optional<Currency> currencyOptional = currencyRepository.findBySymbol(request.getCurrency());
-
-        if (currencyOptional.isEmpty()) {
-            log.error("Currency {} is not present in the DB.", request.getCurrency());
-            throw new RuntimeException("No such currency present in the DB.");
-        }
-
+        Currency currency = currencyRepository.findBySymbol(request.getCurrency())
+                .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));
+                
         com.currency.gateway.entity.Service service = serviceRepository.findByName(request.getService())
-                .orElseThrow(() -> new RuntimeException("No such service registered with the API."));
+                .orElseThrow(() -> new ServiceNotFoundException("No such service registered with the API."));
         
         ApiRequest apiRequest =
                 new ApiRequest(request.getRequestId(), service, request.getClient(), request.getTimestamp());

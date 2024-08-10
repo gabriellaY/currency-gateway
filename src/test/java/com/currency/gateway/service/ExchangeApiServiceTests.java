@@ -24,6 +24,8 @@ import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.exception.CurrencyNotFoundException;
+import com.currency.gateway.exception.ExchangeDataNotFoundException;
 import com.currency.gateway.mapper.LatestExchangeMapper;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
@@ -109,7 +111,7 @@ public class ExchangeApiServiceTests {
         when(latestExchangeRepository.findByBaseCurrency(currency))
                 .thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(CurrencyNotFoundException.class, () -> {
             exchangeApiService.processLatestExchangeRequest(request);
         });
     }
@@ -174,7 +176,7 @@ public class ExchangeApiServiceTests {
                                                                          anyLong()))
                 .thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(ExchangeDataNotFoundException.class, () -> {
             exchangeApiService.processHistoryRequest(request);
         });
     }

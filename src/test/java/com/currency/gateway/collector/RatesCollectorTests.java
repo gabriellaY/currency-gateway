@@ -25,6 +25,7 @@ import com.currency.gateway.configuration.FixerConfig;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
+import com.currency.gateway.exception.CurrencyNotFoundException;
 import com.currency.gateway.model.CurrenciesResponse;
 import com.currency.gateway.model.FixerLatestRatesResponse;
 import com.currency.gateway.repository.CurrencyRepository;
@@ -109,7 +110,7 @@ public class RatesCollectorTests {
 
         when(currencyRepository.findBySymbol("EUR")).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        Exception exception = assertThrows(CurrencyNotFoundException.class, () -> {
             ratesCollector.collectRates();
         });
 

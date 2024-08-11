@@ -39,7 +39,7 @@ public class ExchangeApiService {
     private final CurrencyRepository currencyRepository;
 
     private final ApiRequestService apiRequestService;
-    
+
     private final LatestExchangeMapper latestExchangeMapper;
 
     @Autowired
@@ -58,15 +58,13 @@ public class ExchangeApiService {
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
         ApiRequest savedRequest = apiRequestService.processApiRequest(request);
         Currency currency = currencyRepository.findBySymbol(request.getCurrency())
-                .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));;
+                .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));
 
-        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency)
-                .orElseThrow(
-                        () -> new ExchangeDataNotFoundException("No exchange data found for currency: " + request.getCurrency()));
+        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency).orElseThrow(
+                () -> new ExchangeDataNotFoundException(
+                        "No exchange data found for currency: " + request.getCurrency()));
 
-        List<LatestExchangeDto> dtoList = latestExchange.stream()
-                .map(latestExchangeMapper::toDto)
-                .toList();
+        List<LatestExchangeDto> dtoList = latestExchange.stream().map(latestExchangeMapper::toDto).toList();
 
         log.info("Found latest exchange for currency {}", request.getCurrency());
         return new LatestExchangeResponse(dtoList);
@@ -83,8 +81,8 @@ public class ExchangeApiService {
 
         List<HistoricalExchange> historicalExchangeData =
                 historicalExchangeRepository.findByBaseCurrencyAndTimestamp(request.getCurrency(), startTime)
-                        .orElseThrow(() -> new ExchangeDataNotFoundException("No historical exchange data found for currency: "
-                                                                + request.getCurrency()));
+                        .orElseThrow(() -> new ExchangeDataNotFoundException(
+                                "No historical exchange data found for currency: " + request.getCurrency()));
 
         log.info("Found historical exchange for currency {}", request.getCurrency());
 
@@ -96,8 +94,8 @@ public class ExchangeApiService {
             exchangeHistory.add(data);
         }
 
-        return new HistoricalExchangeResponse(request.getTimestamp(), request.getCurrency(),
-                                              request.getPeriod(), exchangeHistory);
+        return new HistoricalExchangeResponse(request.getTimestamp(), request.getCurrency(), request.getPeriod(),
+                                              exchangeHistory);
     }
 
 }

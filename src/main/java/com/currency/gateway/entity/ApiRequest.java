@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "API_REQUESTS_STATISTICS")
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class ApiRequest implements Serializable {
 
     @Id
@@ -31,10 +33,10 @@ public class ApiRequest implements Serializable {
     @Column(name = "timestamp", nullable = false)
     private long timestamp;
     
-    public ApiRequest(String id, Service service, String endUserID, long timestamp) {
-        this.id = id;
-        this.service = service;
-        this.endUserID = endUserID;
-        this.timestamp = timestamp;
-    }
+//    public ApiRequest(String id, Service service, String endUserID, long timestamp) {
+//        this.id = id;
+//        this.service = service;
+//        this.endUserID = endUserID;
+//        this.timestamp = timestamp;
+//    }
 }

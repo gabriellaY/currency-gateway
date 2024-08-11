@@ -51,6 +51,7 @@ public class FixerClientTests {
 
         HashMap<String, Double> rates = new HashMap<>();
         rates.put("USD", 1.1);
+
         FixerLatestRatesResponse expectedResponse =
                 new FixerLatestRatesResponse(true, 123456789, "EUR",
                                              new Date(System.currentTimeMillis()), rates);
@@ -72,6 +73,7 @@ public class FixerClientTests {
         currencies.put("USD", "United States Dollar");
         currencies.put("EUR", "Euro");
         CurrenciesResponse expectedResponse = new CurrenciesResponse(true, currencies);
+
         when(restTemplate.getForObject(url, CurrenciesResponse.class)).thenReturn(expectedResponse);
 
         CurrenciesResponse response = fixerClient.getCurrencies();

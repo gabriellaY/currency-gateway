@@ -47,6 +47,9 @@ public class ApiRequestServiceTests {
     
     @Mock
     private StatisticsCollector statisticsCollector;
+    
+    @Mock
+    private RabbitMqPublisher rabbitMqPublisher;
 
     @InjectMocks
     private ApiRequestService apiRequestService;
@@ -64,14 +67,14 @@ public class ApiRequestServiceTests {
 
     @Test
     void testProcessApiRequest() {
-        LatestExchangeRequest request = new LatestExchangeRequest();
         Service service = new Service();
         service.setName("EXT_SERVICE_1");
 
         Currency currency = new Currency();
         currency.setSymbol("EUR");
         currency.setName("Euro");
-        
+
+        LatestExchangeRequest request = new LatestExchangeRequest();
         request.setRequestId(UUID.randomUUID().toString());
         request.setService(service.getName());
         request.setClient("1234");

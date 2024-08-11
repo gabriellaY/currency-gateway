@@ -99,7 +99,7 @@ public class ExchangeApiServiceTests {
     }
 
     @Test
-    public void testProcessLatestExchangeRequest_NoCurrencyFound() {
+    public void testProcessLatestExchangeRequestNoCurrencyFound() {
         LatestExchangeRequest request = new LatestExchangeRequest();
         request.setCurrency("USD");
 
@@ -160,7 +160,7 @@ public class ExchangeApiServiceTests {
     }
 
     @Test
-    public void testProcessHistoryRequest_NoDataFound() {
+    public void testProcessHistoryRequestNoDataFound() {
         int period = 24;
 
         HistoricalExchangeRequest request = new HistoricalExchangeRequest();

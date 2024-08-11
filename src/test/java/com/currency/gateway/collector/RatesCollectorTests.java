@@ -63,7 +63,7 @@ public class RatesCollectorTests {
     }
 
     @Test
-    void collectRatesSuccessTest() {
+    void testCollectRatesSuccess() {
         HashMap<String, String> currencies = new HashMap<>();
         currencies.put("USD", "United States Dollar");
         currencies.put("EUR", "Euro");
@@ -93,7 +93,7 @@ public class RatesCollectorTests {
     }
 
     @Test
-    void collectRatesCurrencyNotFoundTest() {
+    void testCollectRatesCurrencyNotFound() {
         HashMap<String, String> currencies = new HashMap<>();
         currencies.put("USD", "United States Dollar");
         currencies.put("EUR", "Euro");

@@ -31,6 +31,7 @@ import com.currency.gateway.model.FixerLatestRatesResponse;
 import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
+import com.currency.gateway.service.CacheService;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -48,6 +49,9 @@ public class RatesCollectorTests {
 
     @Mock
     private CurrencyRepository currencyRepository;
+    
+    @Mock
+    private CacheService cacheService;
 
     @InjectMocks
     private RatesCollector ratesCollector;
@@ -58,7 +62,8 @@ public class RatesCollectorTests {
                 fixerClient,
                 latestExchangeRepository,
                 historicalExchangeRepository,
-                currencyRepository
+                currencyRepository,
+                cacheService
         );
     }
 

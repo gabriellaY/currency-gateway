@@ -32,11 +32,4 @@ public class ApiRequest implements Serializable {
 
     @Column(name = "timestamp", nullable = false)
     private long timestamp;
-    
-//    public ApiRequest(String id, Service service, String endUserID, long timestamp) {
-//        this.id = id;
-//        this.service = service;
-//        this.endUserID = endUserID;
-//        this.timestamp = timestamp;
-//    }
 }

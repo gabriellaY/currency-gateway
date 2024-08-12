@@ -18,7 +18,7 @@ import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
 import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
 import com.currency.gateway.model.latestexchange.LatestExchangeXmlRequest;
 import com.currency.gateway.model.latestexchange.LatestExchangeXmlResponse;
-import com.currency.gateway.service.ApiRequestService;
+import com.currency.gateway.service.CacheService;
 import com.currency.gateway.service.ExchangeApiService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/xml_api")
 public class ExchangeXmlApiController {
 
-    @Autowired
-    ExchangeApiService exchangeApiService;
+    private final ExchangeApiService exchangeApiService;
+    private final CacheService cacheService;
 
     @Autowired
-    ApiRequestService apiRequestService;
+    public ExchangeXmlApiController(ExchangeApiService exchangeApiService, CacheService cacheService) {
+        this.exchangeApiService = exchangeApiService;
+        this.cacheService = cacheService;
+    }
 
     @PostMapping(value = "/command", consumes = MediaType.APPLICATION_XML_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<?> processCommand(@RequestBody Command command) {
@@ -49,7 +52,7 @@ public class ExchangeXmlApiController {
                                               latestExchangeXmlRequest.getConsumer(), System.currentTimeMillis(),
                                               command.getService());
 
-            if (apiRequestService.isDuplicate(request.getRequestId())) {
+            if (cacheService.isDuplicateApiRequest(request)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
             }
 
@@ -71,7 +74,7 @@ public class ExchangeXmlApiController {
                                                   System.currentTimeMillis(), historicalExchangeXmlRequest.getPeriod(),
                                                   command.getService());
 
-            if (apiRequestService.isDuplicate(request.getRequestId())) {
+            if (cacheService.isDuplicateApiRequest(request)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
             }
 

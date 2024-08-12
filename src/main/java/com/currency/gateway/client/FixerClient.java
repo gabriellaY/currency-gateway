@@ -27,7 +27,8 @@ public class FixerClient {
     public FixerLatestRatesResponse getLatestRates() {
         String url = UriComponentsBuilder.fromHttpUrl(fixerConfig.getBaseUrl() + fixerConfig.getLatestRatesUrl())
                 .queryParam("access_key", fixerConfig.getApiAccessKey()).toUriString();
-        log.info("Getting latest currency exchange rates. URL: {}", url);
+
+        log.info("Getting latest currency exchange rates for default base currency EUR. URL: {}", url);
         FixerLatestRatesResponse response = fixerRestTemplate.getForObject(url, FixerLatestRatesResponse.class);
         log.info("Fixer latest rates response {}", response);
 

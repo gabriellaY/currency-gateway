@@ -9,6 +9,9 @@ import com.currency.gateway.entity.ApiRequest;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service to handle publishing API requests to RabbitMQ.
+ */
 @Service
 @Slf4j
 public class RabbitMqPublisher {
@@ -35,5 +38,4 @@ public class RabbitMqPublisher {
                       rabbitMqConfig.getExchange(), rabbitMqConfig.getRoutingKey(), e);
         }
     }
-
 }

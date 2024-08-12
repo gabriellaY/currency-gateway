@@ -1,15 +1,14 @@
 package com.currency.gateway.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.currency.gateway.dto.LatestExchangeDto;
-import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
 import com.currency.gateway.entity.LatestExchange;
@@ -34,31 +33,39 @@ import lombok.extern.slf4j.Slf4j;
 public class ExchangeApiService {
 
     private final LatestExchangeRepository latestExchangeRepository;
-
     private final HistoricalExchangeRepository historicalExchangeRepository;
     private final CurrencyRepository currencyRepository;
-
     private final ApiRequestService apiRequestService;
-
+    private final CacheService cacheService;
     private final LatestExchangeMapper latestExchangeMapper;
 
     @Autowired
     public ExchangeApiService(LatestExchangeRepository latestExchangeRepository,
                               HistoricalExchangeRepository historicalExchangeRepository,
                               ApiRequestService apiRequestService, LatestExchangeMapper latestExchangeMapper,
-                              CurrencyRepository currencyRepository) {
+                              CurrencyRepository currencyRepository, CacheService cacheService) {
         this.latestExchangeRepository = latestExchangeRepository;
         this.historicalExchangeRepository = historicalExchangeRepository;
         this.apiRequestService = apiRequestService;
         this.latestExchangeMapper = latestExchangeMapper;
         this.currencyRepository = currencyRepository;
+        this.cacheService = cacheService;
     }
 
     @Transactional
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
-        ApiRequest savedRequest = apiRequestService.processApiRequest(request);
+        apiRequestService.processApiRequest(request);
+
+        //TODO - first check in the cache if the latest exchange is present there
+
         Currency currency = currencyRepository.findBySymbol(request.getCurrency())
                 .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));
+
+        var cachedExchange = cacheService.getLatestExchanges(request.getCurrency());
+        
+        if (cachedExchange != null ) {
+            //TODO: Map cachedExchangeResponse to LatestExchangeResponse 
+        }
 
         List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency).orElseThrow(
                 () -> new ExchangeDataNotFoundException(
@@ -72,7 +79,7 @@ public class ExchangeApiService {
 
     @Transactional
     public HistoricalExchangeResponse processHistoryRequest(HistoricalExchangeRequest request) {
-        ApiRequest savedRequest = apiRequestService.processApiRequest(request);
+        apiRequestService.processApiRequest(request);
 
         // Calculate the start time based on the period in hours
         long currentTimeMillis = System.currentTimeMillis();
@@ -97,5 +104,4 @@ public class ExchangeApiService {
         return new HistoricalExchangeResponse(request.getTimestamp(), request.getCurrency(), request.getPeriod(),
                                               exchangeHistory);
     }
-
 }

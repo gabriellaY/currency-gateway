@@ -1,7 +1,9 @@
 package com.currency.gateway.collector;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import com.currency.gateway.model.FixerLatestRatesResponse;
 import com.currency.gateway.repository.CurrencyRepository;
 import com.currency.gateway.repository.HistoricalExchangeRepository;
 import com.currency.gateway.repository.LatestExchangeRepository;
+import com.currency.gateway.service.CacheService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,21 +32,23 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RatesCollector {
 
-    final FixerClient fixerClient;
-    final LatestExchangeRepository latestExchangeRepository;
-    final HistoricalExchangeRepository historicalExchangeRepository;
-    final CurrencyRepository currencyRepository;
+    private final FixerClient fixerClient;
+    private final LatestExchangeRepository latestExchangeRepository;
+    private final HistoricalExchangeRepository historicalExchangeRepository;
+    private final CurrencyRepository currencyRepository;
+    private final CacheService cacheService;
 
     @Autowired
     public RatesCollector(FixerClient fixerClient, LatestExchangeRepository latestExchangeRepository,
                           HistoricalExchangeRepository historicalExchangeRepository,
-                          CurrencyRepository currencyRepository) {
+                          CurrencyRepository currencyRepository, CacheService cacheService) {
         this.fixerClient = fixerClient;
         this.latestExchangeRepository = latestExchangeRepository;
         this.historicalExchangeRepository = historicalExchangeRepository;
         this.currencyRepository = currencyRepository;
+        this.cacheService = cacheService;
     }
-    
+
     @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
     @Transactional
     public void collectRates() {
@@ -83,26 +88,59 @@ public class RatesCollector {
 
     @Transactional
     public void saveRatesToDb(FixerLatestRatesResponse latestRates) {
-        String baseCurrency = latestRates.getBase();
+        calculateCrossRates(latestRates);
+    }
+
+    private void calculateCrossRates(FixerLatestRatesResponse latestRates) {
+        //Example USD:BGN = EUR:USD/EUR:BGN
+        log.info("Calculating cross rates");
+
         long timestamp = latestRates.getTimestamp();
         Date date = latestRates.getDate();
-        HashMap<String, Double> rates = latestRates.getRates();
+        HashMap<String, Double> ratesBasedOnEuro = latestRates.getRates();
+        HashMap<String, HashMap<String, Double>> crossRates = new HashMap<>();
+        HashMap<String, Double> rates = new HashMap<>();
 
+        for (String baseCurrency : ratesBasedOnEuro.keySet()) {
+            for (String exchangeCurrency : ratesBasedOnEuro.keySet()) {
+                Double baseRate = ratesBasedOnEuro.get(baseCurrency);
+                Double exchangeRate = ratesBasedOnEuro.get(exchangeCurrency);
+                Double crossRate = baseRate / exchangeRate;
+                
+                rates.put(exchangeCurrency, crossRate);
+            }
+            crossRates.put(baseCurrency, rates);
+            saveRates(crossRates, baseCurrency, timestamp, date);
+            
+            rates.clear();
+            crossRates.clear();
+        }
+    }
+
+    private void saveRates(HashMap<String, HashMap<String, Double>> crossRates, String baseCurrency, long timestamp, Date date) {
+        log.info("Saving exchange rates for base currency {}", baseCurrency);
+        List<HistoricalExchange> historicalExchanges = new ArrayList<>();
+        List<LatestExchange> latestExchanges = new ArrayList<>();
+        Optional<Currency> base = currencyRepository.findBySymbol(baseCurrency);
+        HashMap<String, Double> rates = crossRates.get(baseCurrency);
         for (HashMap.Entry<String, Double> rate : rates.entrySet()) {
             //Make sure both currencies are present in the DB
-            Optional<Currency> base = currencyRepository.findBySymbol(baseCurrency);
+            //Optional<Currency> base = currencyRepository.findBySymbol(baseCurrency);
             Optional<Currency> target = currencyRepository.findBySymbol(rate.getKey());
 
             if (base.isEmpty()) {
-                throw new CurrencyNotFoundException(String.format("Base currency (%s) not present in the DB.", baseCurrency));
+                throw new CurrencyNotFoundException(
+                        String.format("Base currency (%s) not present in the DB.", baseCurrency));
             }
             if (target.isEmpty()) {
-                throw new CurrencyNotFoundException(String.format("Target currency (%s) not present in the DB.", rate.getKey()));
+                throw new CurrencyNotFoundException(
+                        String.format("Target currency (%s) not present in the DB.", rate.getKey()));
             }
 
             HistoricalExchange historicalExchange =
                     new HistoricalExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
-            historicalExchangeRepository.save(historicalExchange);
+            historicalExchanges.add(historicalExchange);
+            //historicalExchangeRepository.save(historicalExchange);
 
             //Check if that exchange is already present in the LatestExchange table, if it is - update it
             Optional<LatestExchange> latestExchangeOptional =
@@ -113,49 +151,29 @@ public class RatesCollector {
                 exchange.setRate(rate.getValue());
                 exchange.setDate(date);
                 exchange.setTimestamp(timestamp);
-                latestExchangeRepository.save(exchange);
+                
+                latestExchanges.add(exchange);
+                //latestExchangeRepository.save(exchange);
             }, () -> {
                 LatestExchange exchange =
                         new LatestExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
-                latestExchangeRepository.save(exchange);
+                latestExchanges.add(exchange);
+                //latestExchangeRepository.save(exchange);
             });
+
+            //saveLatestExchangesToCache(base.get());
         }
+
+        historicalExchangeRepository.saveAll(historicalExchanges);
+        latestExchangeRepository.saveAll(latestExchanges);
+
+        saveLatestExchangesToCache(base.get());
     }
 
-    //Used for testing
-    public void collectRatesMock() {
-        log.info("Collecting currency rates.");
-
-        // Mocked response for CurrenciesResponse
-        var currenciesResponse = new CurrenciesResponse(true,new HashMap<>() {{
-            put("USD", "United States Dollar");
-            put("EUR", "Euro");
-            put("GBP", "British Pound Sterling");
-            put("JPY", "Japanese Yen");
-            put("AUD", "Australian Dollar");
-            // Add more currency symbols as needed
-        }});
-
-        if (currenciesResponse.isSuccess()) {
-            saveCurrenciesToDb(currenciesResponse);
-        }
-
-        // Mocked response for FixerLatestRatesResponse
-        var latestRatesResponse = new FixerLatestRatesResponse();
-        latestRatesResponse.setBase("USD");
-        latestRatesResponse.setTimestamp(System.currentTimeMillis() / 1000L);
-        latestRatesResponse.setDate(new Date(System.currentTimeMillis()));
-        latestRatesResponse.setRates(new HashMap<>() {{
-            put("EUR", 0.85);
-            put("GBP", 0.75);
-            put("JPY", 110.0);
-            put("AUD", 1.35);
-            // Add more rates as needed
-        }});
-        latestRatesResponse.setSuccess(true);
-
-        if (latestRatesResponse.isSuccess()) {
-            saveRatesToDb(latestRatesResponse);
-        }
+    private void saveLatestExchangesToCache(Currency baseCurrency) {
+        log.info("Saving latest exchanges for base currency {} to the cache", baseCurrency.getSymbol());
+        Optional<List<LatestExchange>> latestExchange = latestExchangeRepository.findByBaseCurrency(baseCurrency);
+        latestExchange.ifPresent(
+                latestExchanges -> cacheService.cacheLatestExchanges(baseCurrency.getSymbol(), latestExchanges));
     }
 }

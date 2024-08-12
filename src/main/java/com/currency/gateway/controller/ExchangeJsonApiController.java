@@ -1,25 +1,20 @@
 package com.currency.gateway.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.currency.gateway.collector.RatesCollector;
-import com.currency.gateway.entity.Currency;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
 import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
 import com.currency.gateway.model.latestexchange.LatestExchangeResponse;
-import com.currency.gateway.repository.CurrencyRepository;
-import com.currency.gateway.service.ApiRequestService;
+import com.currency.gateway.service.CacheService;
 import com.currency.gateway.service.ExchangeApiService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,22 +27,23 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/json_api")
 public class ExchangeJsonApiController {
 
-    @Autowired
-    ExchangeApiService exchangeApiService;
+    private final ExchangeApiService exchangeApiService;
+    private final CacheService cacheService;
+    private final RatesCollector ratesCollector;
 
     @Autowired
-    ApiRequestService apiRequestService;
-
-    @Autowired
-    RatesCollector ratesCollector;
-
-    @Autowired
-    CurrencyRepository currencyRepository;
+    public ExchangeJsonApiController(ExchangeApiService exchangeApiService, CacheService cacheService,
+                                     RatesCollector ratesCollector) {
+        this.exchangeApiService = exchangeApiService;
+        this.cacheService = cacheService;
+        this.ratesCollector = ratesCollector;
+    }
 
     @PostMapping(value = "/current", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> processGetLatestExchange(@RequestBody LatestExchangeRequest request) {
         log.info("Get latest exchange data for currency {}", request.getCurrency());
-        if (apiRequestService.isDuplicate(request.getRequestId())) {
+        
+        if (cacheService.isDuplicateApiRequest(request)) {
             log.error("Duplicated api request for latest exchange. Request ID: {}", request.getRequestId());
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
         }
@@ -56,13 +52,12 @@ public class ExchangeJsonApiController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/history", consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> processGetHistoricalExchange(
-            @RequestBody HistoricalExchangeRequest request) {
+    @PostMapping(value = "/history", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> processGetHistoricalExchange(@RequestBody HistoricalExchangeRequest request) {
         log.info("Get historical exchange data for currency {}", request.getCurrency());
-        if (apiRequestService.isDuplicate(request.getRequestId())) {
-            log.error("Duplicated api request for exchange history. Request ID: {}", request.getRequestId());
+
+        if (cacheService.isDuplicateApiRequest(request)) {
+            log.error("Duplicated api request for latest exchange. Request ID: {}", request.getRequestId());
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Duplicate request");
         }
 
@@ -75,11 +70,5 @@ public class ExchangeJsonApiController {
     public ResponseEntity<?> collectRates() {
         ratesCollector.collectRates();
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping(value = "/currencies", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Currency>> getCurrencies() {
-        List<Currency> currencies = currencyRepository.findAll();
-        return ResponseEntity.ok(currencies);
     }
 }

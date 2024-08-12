@@ -11,8 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import lombok.Data;
 
 @Data
-@ConfigurationProperties(prefix = "spring.rabbitmq.template")
 @Configuration
+@ConfigurationProperties(prefix = "spring.rabbitmq.template")
 public class RabbitMqConfig {
 
     private String exchange;

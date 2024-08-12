@@ -1,5 +1,6 @@
 package com.currency.gateway.entity;
 
+import java.io.Serializable;
 import java.sql.Date;
 
 import jakarta.persistence.Column;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "LATEST_EXCHANGE")
 @Data
 @NoArgsConstructor
-public class LatestExchange {
+public class LatestExchange implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)

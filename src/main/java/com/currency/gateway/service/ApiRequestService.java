@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.currency.gateway.collector.StatisticsCollector;
 import com.currency.gateway.entity.ApiRequest;
-import com.currency.gateway.entity.Currency;
 import com.currency.gateway.exception.CurrencyNotFoundException;
 import com.currency.gateway.exception.ServiceNotFoundException;
 import com.currency.gateway.model.ExchangeApiRequest;
@@ -48,16 +47,16 @@ public class ApiRequestService {
 
     @Transactional
     public ApiRequest processApiRequest(ExchangeApiRequest request) {
-        Currency currency = currencyRepository.findBySymbol(request.getCurrency())
+        currencyRepository.findBySymbol(request.getCurrency())
                 .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));
                 
         com.currency.gateway.entity.Service service = serviceRepository.findByName(request.getService())
                 .orElseThrow(() -> new ServiceNotFoundException("No such service registered with the API."));
-        
+
         ApiRequest apiRequest =
                 new ApiRequest(request.getRequestId(), service, request.getClient(), request.getTimestamp());
         ApiRequest saved = statisticsCollector.saveApiRequestStatistics(apiRequest);
-        
+
         rabbitMqPublisher.publishApiRequest(apiRequest);
 
         return saved;

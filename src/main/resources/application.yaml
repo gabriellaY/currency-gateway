@@ -44,4 +44,4 @@ currency-gateway:
     latestRatesUrl: /latest
     currenciesUrl: /symbols
   schedules:
-    rates-collector: "0 0 0,12 * * ?"
+    rates-collector: "0 0 0 * * *"

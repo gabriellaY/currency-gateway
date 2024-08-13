@@ -51,6 +51,7 @@ public class RatesCollector {
         this.cacheService = cacheService;
     }
 
+    // Scheduled to run once every 24 hours
     @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
     @Transactional
     public void collectRates() {

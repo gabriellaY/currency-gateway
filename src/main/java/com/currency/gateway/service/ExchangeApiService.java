@@ -70,7 +70,7 @@ public class ExchangeApiService {
             dtoList = cachedExchangeResponse.stream()
                     .map(cached -> latestExchangeMapper.mapCachedResponseToLatestExchange(cached))
                     .collect(Collectors.toList());
-            
+
         } else {
             log.info("Getting latest exchange from the DB.");
             List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency).orElseThrow(
@@ -80,7 +80,7 @@ public class ExchangeApiService {
         }
 
         log.info("Found latest exchange for currency {}", request.getCurrency());
-        
+
         return new LatestExchangeResponse(dtoList);
     }
 
@@ -88,10 +88,7 @@ public class ExchangeApiService {
     public HistoricalExchangeResponse processHistoryRequest(HistoricalExchangeRequest request) {
         apiRequestService.processApiRequest(request);
 
-        // Calculate the start time based on the period in hours
-        long currentTimeMillis = System.currentTimeMillis();
-        long periodInMillis = request.getPeriod() * 3600000L;
-        long startTime = currentTimeMillis - periodInMillis;
+        long startTime = getCalculatedPeriodInSeconds(request.getPeriod());
 
         List<HistoricalExchange> historicalExchangeData =
                 historicalExchangeRepository.findByBaseCurrencyAndTimestamp(request.getCurrency(), startTime)
@@ -103,12 +100,21 @@ public class ExchangeApiService {
         List<HistoricalExchangeResponse.HistoricalExchangeData> exchangeHistory = new ArrayList<>();
         for (HistoricalExchange exchange : historicalExchangeData) {
             HistoricalExchangeResponse.HistoricalExchangeData data =
-                    new HistoricalExchangeResponse.HistoricalExchangeData(exchange.getTimestamp(), exchange.getRate());
+                    new HistoricalExchangeResponse.HistoricalExchangeData(exchange.getTimestamp(), exchange.getRate(),
+                                                                          exchange.getExchangeCurrency().getSymbol());
 
             exchangeHistory.add(data);
         }
 
         return new HistoricalExchangeResponse(request.getTimestamp(), request.getCurrency(), request.getPeriod(),
                                               exchangeHistory);
+    }
+
+    private long getCalculatedPeriodInSeconds(int periodInHours) {
+        long currentTimeInSeconds = System.currentTimeMillis() / 1000;
+        long periodInSeconds = periodInHours * 3600;
+        long startTime = currentTimeInSeconds - periodInSeconds;
+
+        return startTime;
     }
 }

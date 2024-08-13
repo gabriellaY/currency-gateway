@@ -23,5 +23,6 @@ public class HistoricalExchangeResponse implements Serializable {
     public static class HistoricalExchangeData {
         private long timestamp;
         private double rate;
+        private String exchangeCurrency;
     }
 }

@@ -3,6 +3,7 @@ package com.currency.gateway.service;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -56,24 +57,30 @@ public class ExchangeApiService {
     public LatestExchangeResponse processLatestExchangeRequest(LatestExchangeRequest request) {
         apiRequestService.processApiRequest(request);
 
-        //TODO - first check in the cache if the latest exchange is present there
-
         Currency currency = currencyRepository.findBySymbol(request.getCurrency())
                 .orElseThrow(() -> new CurrencyNotFoundException("No such currency present in the DB."));
 
-        var cachedExchange = cacheService.getLatestExchanges(request.getCurrency());
-        
-        if (cachedExchange != null ) {
-            //TODO: Map cachedExchangeResponse to LatestExchangeResponse 
+        ArrayList<LinkedHashMap<String, Object>> cachedExchangeResponse =
+                (ArrayList<LinkedHashMap<String, Object>>) cacheService.getLatestExchanges(request.getCurrency());
+
+        List<LatestExchangeDto> dtoList;
+
+        if (cachedExchangeResponse != null) {
+            log.info("Getting latest exchange from the cache.");
+            dtoList = cachedExchangeResponse.stream()
+                    .map(cached -> latestExchangeMapper.mapCachedResponseToLatestExchange(cached))
+                    .collect(Collectors.toList());
+            
+        } else {
+            log.info("Getting latest exchange from the DB.");
+            List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency).orElseThrow(
+                    () -> new ExchangeDataNotFoundException(
+                            "No exchange data found for currency: " + request.getCurrency()));
+            dtoList = latestExchange.stream().map(latestExchangeMapper::toDto).collect(Collectors.toList());
         }
 
-        List<LatestExchange> latestExchange = latestExchangeRepository.findByBaseCurrency(currency).orElseThrow(
-                () -> new ExchangeDataNotFoundException(
-                        "No exchange data found for currency: " + request.getCurrency()));
-
-        List<LatestExchangeDto> dtoList = latestExchange.stream().map(latestExchangeMapper::toDto).toList();
-
         log.info("Found latest exchange for currency {}", request.getCurrency());
+        
         return new LatestExchangeResponse(dtoList);
     }
 

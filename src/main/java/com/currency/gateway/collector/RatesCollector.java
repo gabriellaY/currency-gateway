@@ -1,5 +1,7 @@
 package com.currency.gateway.collector;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,20 +101,25 @@ public class RatesCollector {
         Date date = latestRates.getDate();
         HashMap<String, Double> ratesBasedOnEuro = latestRates.getRates();
         HashMap<String, HashMap<String, Double>> crossRates = new HashMap<>();
-        HashMap<String, Double> rates = new HashMap<>();
 
         for (String baseCurrency : ratesBasedOnEuro.keySet()) {
+            HashMap<String, Double> rates = new HashMap<>();
+            Double baseRate = ratesBasedOnEuro.get(baseCurrency);
+
             for (String exchangeCurrency : ratesBasedOnEuro.keySet()) {
-                Double baseRate = ratesBasedOnEuro.get(baseCurrency);
                 Double exchangeRate = ratesBasedOnEuro.get(exchangeCurrency);
-                Double crossRate = baseRate / exchangeRate;
-                
-                rates.put(exchangeCurrency, crossRate);
+                if (exchangeRate != 0) {
+                    double crossRate = baseRate / exchangeRate;
+
+                    BigDecimal roundedCrossRate = new BigDecimal(crossRate).setScale(4, RoundingMode.HALF_UP);
+                    rates.put(exchangeCurrency, roundedCrossRate.doubleValue());
+                } else {
+                    log.warn("Exchange rate for {} is zero, skipping..", exchangeCurrency);
+                }
             }
             crossRates.put(baseCurrency, rates);
             saveRates(crossRates, baseCurrency, timestamp, date);
             
-            rates.clear();
             crossRates.clear();
         }
     }

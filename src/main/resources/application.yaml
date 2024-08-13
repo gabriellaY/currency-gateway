@@ -11,8 +11,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/currency_info_gateway
-    username: root
-    password: 12345678
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     initialize: true
   jpa:
     hibernate:
@@ -30,8 +30,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
     template:
       exchange: amq.topic
       routingKey: currency.gateway.api-requests
@@ -39,7 +39,7 @@ spring:
 
 currency-gateway:
   fixer:
-    apiAccessKey: 9536cbefbb6c172a961d4943bece59d4
+    apiAccessKey: ${FIXER_API_ACCESS_KEY}
     baseUrl: http://data.fixer.io/api
     latestRatesUrl: /latest
     currenciesUrl: /symbols

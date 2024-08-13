@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.currency.gateway.collector.RatesCollector;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeRequest;
 import com.currency.gateway.model.historicalexchange.HistoricalExchangeResponse;
 import com.currency.gateway.model.latestexchange.LatestExchangeRequest;
@@ -29,14 +28,11 @@ public class ExchangeJsonApiController {
 
     private final ExchangeApiService exchangeApiService;
     private final CacheService cacheService;
-    private final RatesCollector ratesCollector;
 
     @Autowired
-    public ExchangeJsonApiController(ExchangeApiService exchangeApiService, CacheService cacheService,
-                                     RatesCollector ratesCollector) {
+    public ExchangeJsonApiController(ExchangeApiService exchangeApiService, CacheService cacheService) {
         this.exchangeApiService = exchangeApiService;
         this.cacheService = cacheService;
-        this.ratesCollector = ratesCollector;
     }
 
     @PostMapping(value = "/current", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,12 +59,5 @@ public class ExchangeJsonApiController {
 
         HistoricalExchangeResponse response = exchangeApiService.processHistoryRequest(request);
         return ResponseEntity.ok(response);
-    }
-
-    // For testing
-    @PostMapping(value = "/dbsync", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> collectRates() {
-        ratesCollector.collectRates();
-        return ResponseEntity.ok().build();
     }
 }

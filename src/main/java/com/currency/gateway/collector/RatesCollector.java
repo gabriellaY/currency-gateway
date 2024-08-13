@@ -128,11 +128,12 @@ public class RatesCollector {
         log.info("Saving exchange rates for base currency {}", baseCurrency);
         List<HistoricalExchange> historicalExchanges = new ArrayList<>();
         List<LatestExchange> latestExchanges = new ArrayList<>();
+
         Optional<Currency> base = currencyRepository.findBySymbol(baseCurrency);
         HashMap<String, Double> rates = crossRates.get(baseCurrency);
+
         for (HashMap.Entry<String, Double> rate : rates.entrySet()) {
             //Make sure both currencies are present in the DB
-            //Optional<Currency> base = currencyRepository.findBySymbol(baseCurrency);
             Optional<Currency> target = currencyRepository.findBySymbol(rate.getKey());
 
             if (base.isEmpty()) {
@@ -147,7 +148,6 @@ public class RatesCollector {
             HistoricalExchange historicalExchange =
                     new HistoricalExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
             historicalExchanges.add(historicalExchange);
-            //historicalExchangeRepository.save(historicalExchange);
 
             //Check if that exchange is already present in the LatestExchange table, if it is - update it
             Optional<LatestExchange> latestExchangeOptional =
@@ -160,15 +160,11 @@ public class RatesCollector {
                 exchange.setTimestamp(timestamp);
                 
                 latestExchanges.add(exchange);
-                //latestExchangeRepository.save(exchange);
             }, () -> {
                 LatestExchange exchange =
                         new LatestExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
                 latestExchanges.add(exchange);
-                //latestExchangeRepository.save(exchange);
             });
-
-            //saveLatestExchangesToCache(base.get());
         }
 
         historicalExchangeRepository.saveAll(historicalExchanges);

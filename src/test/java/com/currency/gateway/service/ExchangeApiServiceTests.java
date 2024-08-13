@@ -9,7 +9,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,9 @@ public class ExchangeApiServiceTests {
 
     @Mock
     private LatestExchangeMapper latestExchangeMapper;
+    
+    @Mock
+    private CacheService cacheService;
 
     @InjectMocks
     private ExchangeApiService exchangeApiService;
@@ -62,17 +67,10 @@ public class ExchangeApiServiceTests {
     public void testProcessLatestExchangeRequest() {
         LatestExchangeRequest request = new LatestExchangeRequest();
         request.setCurrency("USD");
-
         Currency currency = new Currency("USD", "US dollar");
         ApiRequest savedRequest = new ApiRequest();
-
-        Currency exchangeCurrency = new Currency("EUR", "Euro");
-        LatestExchange latestExchange = new LatestExchange();
-        latestExchange.setId(1L);
-        latestExchange.setTimestamp(System.currentTimeMillis());
-        latestExchange.setBaseCurrency(currency);
-        latestExchange.setExchangeCurrency(exchangeCurrency);
-        latestExchange.setRate(1.234);
+        
+        LatestExchange latestExchange = getLatestExchange();
         List<LatestExchange> exchangeList = new ArrayList<>();
         exchangeList.add(latestExchange);
 
@@ -89,6 +87,12 @@ public class ExchangeApiServiceTests {
         when(latestExchangeMapper.toDto(latestExchange))
                 .thenReturn(latestExchangeDto);
 
+        ArrayList<Map<String, Object>> cachedResponse = getLatestExchangeCachedResponse();
+
+        when(cacheService.getLatestExchanges(currency.getSymbol())).thenReturn(cachedResponse);
+        when(latestExchangeMapper.mapCachedResponseToLatestExchange(cachedResponse.get(0)))
+                .thenReturn(latestExchangeDto);
+        
         LatestExchangeResponse response = exchangeApiService.processLatestExchangeRequest(request);
         List<LatestExchangeDto> exchanges = response.getLatestExchanges();
 
@@ -135,6 +139,7 @@ public class ExchangeApiServiceTests {
         HistoricalExchange historicalExchange = new HistoricalExchange();
         historicalExchange.setTimestamp(startTime);
         historicalExchange.setRate(1.234);
+        historicalExchange.setExchangeCurrency(new Currency("EUR", "Euro"));
 
         List<HistoricalExchange> historicalExchangeList = new ArrayList<>();
         historicalExchangeList.add(historicalExchange);
@@ -179,5 +184,40 @@ public class ExchangeApiServiceTests {
         assertThrows(ExchangeDataNotFoundException.class, () -> {
             exchangeApiService.processHistoryRequest(request);
         });
+    }
+    
+    private LatestExchange getLatestExchange() {
+        Currency currency = new Currency("USD", "US dollar");
+        Currency exchangeCurrency = new Currency("EUR", "Euro");
+
+        LatestExchange latestExchange = new LatestExchange();
+        latestExchange.setId(1L);
+        latestExchange.setTimestamp(System.currentTimeMillis());
+        latestExchange.setBaseCurrency(currency);
+        latestExchange.setExchangeCurrency(exchangeCurrency);
+        latestExchange.setRate(1.234);
+
+        List<LatestExchange> exchangeList = new ArrayList<>();
+        exchangeList.add(latestExchange);
+        
+        return latestExchange;
+    }
+    private ArrayList<Map<String, Object>> getLatestExchangeCachedResponse() {
+        ArrayList<Map<String, Object>> cachedResponse = new ArrayList<>();
+        Map<String, Object> exchangeData = new LinkedHashMap<>();
+
+        exchangeData.put("id", 11111);
+        exchangeData.put("rate", 1.2345);
+        exchangeData.put("timestamp", 1625097600);
+
+        Map<String, Object> exchangeCurrencyMap = new LinkedHashMap<>();
+        exchangeCurrencyMap.put("symbol", "EUR");
+        exchangeCurrencyMap.put("name", "Euro");
+        exchangeCurrencyMap.put("id", 12345678);
+
+        exchangeData.put("exchangeCurrency", exchangeCurrencyMap);
+        cachedResponse.add(exchangeData);
+        
+        return cachedResponse;
     }
 }

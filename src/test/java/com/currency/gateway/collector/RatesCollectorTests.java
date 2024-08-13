@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,7 @@ public class RatesCollectorTests {
 
     @Mock
     private CurrencyRepository currencyRepository;
-    
+
     @Mock
     private CacheService cacheService;
 
@@ -58,13 +59,8 @@ public class RatesCollectorTests {
 
     @BeforeEach
     void setUp() {
-        ratesCollector = new RatesCollector(
-                fixerClient,
-                latestExchangeRepository,
-                historicalExchangeRepository,
-                currencyRepository,
-                cacheService
-        );
+        ratesCollector = new RatesCollector(fixerClient, latestExchangeRepository, historicalExchangeRepository,
+                                            currencyRepository, cacheService);
     }
 
     @Test
@@ -88,13 +84,12 @@ public class RatesCollectorTests {
 
         when(currencyRepository.findBySymbol("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findBySymbol("USD")).thenReturn(Optional.of(usd));
-
         when(latestExchangeRepository.findByBaseCurrencyAndExchangeCurrency(eur, usd)).thenReturn(Optional.empty());
 
         ratesCollector.collectRates();
 
-        verify(historicalExchangeRepository, times(1)).save(any(HistoricalExchange.class));
-        verify(latestExchangeRepository, times(1)).save(any(LatestExchange.class));
+        verify(historicalExchangeRepository, times(1)).saveAll(any(List.class));
+        verify(latestExchangeRepository, times(1)).saveAll(any(List.class));
     }
 
     @Test
@@ -113,12 +108,12 @@ public class RatesCollectorTests {
         when(fixerClient.getCurrencies()).thenReturn(currenciesResponse);
         when(fixerClient.getLatestRates()).thenReturn(latestRatesResponse);
 
-        when(currencyRepository.findBySymbol("EUR")).thenReturn(Optional.empty());
+        when(currencyRepository.findBySymbol("USD")).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(CurrencyNotFoundException.class, () -> {
             ratesCollector.collectRates();
         });
 
-        assertEquals("Base currency (EUR) not present in the DB.", exception.getMessage());
+        assertEquals("Base currency (USD) not present in the DB.", exception.getMessage());
     }
 }

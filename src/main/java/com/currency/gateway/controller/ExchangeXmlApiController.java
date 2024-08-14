@@ -24,7 +24,7 @@ import com.currency.gateway.service.ExchangeApiService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controller to handle all requests to the JSON API.
+ * Controller to handle all requests to the XML API.
  */
 @Slf4j
 @RestController

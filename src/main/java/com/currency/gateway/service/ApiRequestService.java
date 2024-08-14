@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApiRequestService {
 
-    private final Set<String> processedRequestIds = new HashSet<>();
     private final CurrencyRepository currencyRepository;
     private final ServiceRepository serviceRepository;
     private final StatisticsCollector statisticsCollector;
@@ -39,10 +38,6 @@ public class ApiRequestService {
         this.statisticsCollector = statisticsCollector;
         this.serviceRepository = serviceRepository;
         this.rabbitMqPublisher = rabbitMqPublisher;
-    }
-
-    public synchronized boolean isDuplicate(String requestId) {
-        return !processedRequestIds.add(requestId);
     }
 
     @Transactional

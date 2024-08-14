@@ -21,7 +21,9 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import com.currency.gateway.dto.LatestExchangeDto;
+import com.currency.gateway.mapper.HistoricalExchangeMapper;
+import com.currency.gateway.model.historicalexchange.HistoricalExchangeDto;
+import com.currency.gateway.model.latestexchange.LatestExchangeDto;
 import com.currency.gateway.entity.ApiRequest;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.HistoricalExchange;
@@ -55,6 +57,9 @@ public class ExchangeApiServiceTests {
 
     @Mock
     private LatestExchangeMapper latestExchangeMapper;
+    
+    @Mock
+    private HistoricalExchangeMapper historicalExchangeMapper;
     
     @Mock
     private CacheService cacheService;
@@ -143,11 +148,15 @@ public class ExchangeApiServiceTests {
 
         List<HistoricalExchange> historicalExchangeList = new ArrayList<>();
         historicalExchangeList.add(historicalExchange);
+        
+        HistoricalExchangeDto historicalExchangeDto = new HistoricalExchangeDto(startTime, 1.234, "EUR");
 
         when(apiRequestService.processApiRequest(request))
                 .thenReturn(savedRequest);
         when(historicalExchangeRepository.findByBaseCurrencyAndTimestamp(anyString(), anyLong()))
                 .thenReturn(Optional.of(historicalExchangeList));
+        when(historicalExchangeMapper.toDto(historicalExchange))
+                .thenReturn(historicalExchangeDto);
 
         HistoricalExchangeResponse response = exchangeApiService.processHistoryRequest(request);
 
@@ -156,10 +165,10 @@ public class ExchangeApiServiceTests {
         assertEquals("USD", response.getCurrency());
         assertEquals(period, response.getPeriod());
 
-        List<HistoricalExchangeResponse.HistoricalExchangeData> exchangeHistory = response.getExchangeHistory();
+        List<HistoricalExchangeDto> exchangeHistory = response.getExchangeHistory();
         assertEquals(1, exchangeHistory.size());
 
-        HistoricalExchangeResponse.HistoricalExchangeData data = exchangeHistory.get(0);
+        HistoricalExchangeDto data = exchangeHistory.get(0);
         assertEquals(startTime, data.getTimestamp());
         assertEquals(1.234, data.getRate());
     }

@@ -6,7 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.validation.annotation.Validated;
 
-import com.currency.gateway.dto.LatestExchangeDto;
+import com.currency.gateway.model.latestexchange.LatestExchangeDto;
 import com.currency.gateway.entity.Currency;
 import com.currency.gateway.entity.LatestExchange;
 

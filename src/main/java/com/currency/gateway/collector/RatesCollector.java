@@ -51,18 +51,15 @@ public class RatesCollector {
         this.cacheService = cacheService;
     }
 
-    // Scheduled to run once every 24 hours
     @Scheduled(cron = "${currency-gateway.schedules.rates-collector}")
     @Transactional
     public void collectRates() {
         log.info("Collecting currency rates.");
-        //First collect currency symbols to make sure all available currencies are present in the DB.
         CurrenciesResponse currenciesResponse = fixerClient.getCurrencies();
         if (currenciesResponse != null && currenciesResponse.isSuccess()) {
             saveCurrenciesToDb(currenciesResponse);
         }
 
-        //Then collect the latest exchange rates.
         FixerLatestRatesResponse response = fixerClient.getLatestRates();
 
         if (response != null && response.isSuccess()) {
@@ -76,8 +73,6 @@ public class RatesCollector {
 
         for (HashMap.Entry<String, String> c : currencies.entrySet()) {
             Currency currency = new Currency(c.getKey(), c.getValue());
-
-            // Check if the currency is not already present in the DB, if not then add it.
             Optional<Currency> currencyInDb = currencyRepository.findBySymbol(c.getKey());
 
             currencyInDb.ifPresentOrElse(curr -> {
@@ -91,13 +86,6 @@ public class RatesCollector {
 
     @Transactional
     public void saveRatesToDb(FixerLatestRatesResponse latestRates) {
-        calculateCrossRates(latestRates);
-    }
-
-    private void calculateCrossRates(FixerLatestRatesResponse latestRates) {
-        //Example USD:BGN = EUR:USD/EUR:BGN
-        log.info("Calculating cross rates");
-
         long timestamp = latestRates.getTimestamp();
         Date date = latestRates.getDate();
         HashMap<String, Double> ratesBasedOnEuro = latestRates.getRates();
@@ -106,6 +94,8 @@ public class RatesCollector {
         for (String baseCurrency : ratesBasedOnEuro.keySet()) {
             HashMap<String, Double> rates = new HashMap<>();
             Double baseRate = ratesBasedOnEuro.get(baseCurrency);
+
+            log.info("Calculate cross rate for base currency {}.", baseCurrency);
 
             for (String exchangeCurrency : ratesBasedOnEuro.keySet()) {
                 Double exchangeRate = ratesBasedOnEuro.get(exchangeCurrency);
@@ -120,7 +110,7 @@ public class RatesCollector {
             }
             crossRates.put(baseCurrency, rates);
             saveRates(crossRates, baseCurrency, timestamp, date);
-            
+
             crossRates.clear();
         }
     }
@@ -134,7 +124,6 @@ public class RatesCollector {
         HashMap<String, Double> rates = crossRates.get(baseCurrency);
 
         for (HashMap.Entry<String, Double> rate : rates.entrySet()) {
-            //Make sure both currencies are present in the DB
             Optional<Currency> target = currencyRepository.findBySymbol(rate.getKey());
 
             if (base.isEmpty()) {
@@ -149,8 +138,7 @@ public class RatesCollector {
             HistoricalExchange historicalExchange =
                     new HistoricalExchange(base.get(), target.get(), rate.getValue(), timestamp, date);
             historicalExchanges.add(historicalExchange);
-
-            //Check if that exchange is already present in the LatestExchange table, if it is - update it
+            
             Optional<LatestExchange> latestExchangeOptional =
                     latestExchangeRepository.findByBaseCurrencyAndExchangeCurrency(base.get(), target.get());
 

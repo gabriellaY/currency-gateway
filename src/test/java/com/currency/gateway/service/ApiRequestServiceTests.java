@@ -55,17 +55,6 @@ public class ApiRequestServiceTests {
     private ApiRequestService apiRequestService;
 
     @Test
-    void testIsDuplicate() {
-        String requestId = UUID.randomUUID().toString();
-
-        boolean isDuplicate = apiRequestService.isDuplicate(requestId);
-        assertFalse(isDuplicate);
-
-        isDuplicate = apiRequestService.isDuplicate(requestId);
-        assertTrue(isDuplicate);
-    }
-
-    @Test
     void testProcessApiRequest() {
         Service service = new Service();
         service.setName("EXT_SERVICE_1");

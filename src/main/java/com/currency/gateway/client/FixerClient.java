@@ -1,6 +1,5 @@
 package com.currency.gateway.client;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,11 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FixerClient {
 
-    @Autowired
-    private RestTemplate fixerRestTemplate;
+    private final RestTemplate fixerRestTemplate;
+    private final FixerConfig fixerConfig;
 
-    @Autowired
-    private FixerConfig fixerConfig;
+    public FixerClient(RestTemplate fixerRestTemplate, FixerConfig fixerConfig) {
+        this.fixerRestTemplate = fixerRestTemplate;
+        this.fixerConfig = fixerConfig;
+    }
 
     public FixerLatestRatesResponse getLatestRates() {
         String url = UriComponentsBuilder.fromHttpUrl(fixerConfig.getBaseUrl() + fixerConfig.getLatestRatesUrl())

@@ -12,5 +12,4 @@ import com.currency.gateway.entity.Service;
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 
     Optional<Service> findByName(String name);
-
 }
